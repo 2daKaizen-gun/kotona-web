@@ -1,36 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KOTONA Web
 
-## Getting Started
+Frontend for [**kotona-analyzer**](https://github.com/2daKaizen-gun/kotona-analyzer) — a Japanese business communication analyzer that reads the 本音 (true intent) behind the 建前 (public face).
 
-First, run the development server:
+Next.js 16 (App Router) · TypeScript · Tailwind CSS 4
+
+## Getting started
+
+The backend must be running first.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1) Start the backend (in the kotona-analyzer repo)
+docker compose up -d --build          # app on :8081, MySQL on :3307
+
+# 2) Start the frontend
+cp .env.local.example .env.local
+npm install
+npm run dev                            # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`.env.local` defaults work out of the box for local development:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Default | Notes |
+|---|---|---|
+| `KOTONA_API_URL` | `http://localhost:8081` | Backend base URL |
+| `KOTONA_API_KEY` | *(empty)* | Only needed if the backend sets `API_KEY` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Architecture: why a BFF
 
-## Learn More
+The browser never calls the backend directly.
 
-To learn more about Next.js, take a look at the following resources:
+```
+Browser  ──▶  Next.js route handler  ──▶  Spring Boot  ──▶  Gemini
+              (/api/analyze)              (:8081)
+              server-only — holds the API key
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The backend protects `/analyze` and `/api/history` with an `X-API-KEY` header. If the browser sent that header itself, the key would sit in the JavaScript bundle for anyone to read — security in appearance only.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Instead, `src/app/api/*` route handlers run server-side and read `KOTONA_API_KEY`. The absence of a `NEXT_PUBLIC_` prefix is what keeps it out of the client bundle. All backend calls are funnelled through `src/lib/backend.ts`, which is imported only by those handlers.
 
-## Deploy on Vercel
+## Types come from the backend
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`src/types/api.d.ts` is generated from the backend's OpenAPI spec — never edit it by hand.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+curl http://localhost:8081/v3/api-docs -o openapi/kotona-api.json
+npx openapi-typescript openapi/kotona-api.json -o src/types/api.d.ts
+```
+
+The backend derives that spec from its `NuanceResponseDTO` record tree, so a field added in Java propagates to the frontend types by rerunning the two commands above. Nothing is typed twice.
+
+## The 25-second wait
+
+Analysis takes roughly 15–25 seconds. The cost is output token generation — three smart replies plus two alternatives, written in Japanese and Korean — not model thinking, so it cannot be tuned away without cutting the feature.
+
+A bare spinner reads as a hang at that length, so `ProgressIndicator` walks through the stages the backend actually performs. The timings are measured estimates; the server does not stream progress.
+
+Two consequences worth knowing:
+
+- `maxDuration = 120` is set on the analyze route handler. The framework default would cut the request off first.
+- `src/lib/backend.ts` uses a 90-second `AbortController` timeout, well above the observed worst case.
+
+## Layout
+
+```
+src/
+  app/
+    api/            BFF route handlers — server-only, hold the API key
+    page.tsx
+  components/       AnalyzeForm, ResultView, ProgressIndicator
+  lib/backend.ts    every backend call lives here
+  types/api.d.ts    generated — do not edit
+openapi/            checked-in copy of the backend spec
+```
+
+## Related
+
+- [kotona-analyzer](https://github.com/2daKaizen-gun/kotona-analyzer) — Spring Boot backend, analysis engine, Gemini integration
+- Tracking issue: [kotona-analyzer#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27)
