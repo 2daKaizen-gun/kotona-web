@@ -37,7 +37,9 @@ type FetchOptions = {
 };
 
 async function callBackend<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  const { method = "GET", body, timeoutMs = 90_000 } = options;
+  // 분석은 꼬리가 길다(관측 최대 79초). route handler 의 maxDuration(120초) 안에 머무르되
+  // 그보다 먼저 끊어, 프레임워크가 자르기 전에 우리 문구로 안내한다.
+  const { method = "GET", body, timeoutMs = 110_000 } = options;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
