@@ -52,14 +52,16 @@ The backend derives that spec from its `NuanceResponseDTO` record tree, so a fie
 
 ## The 25-second wait
 
-Analysis takes roughly 15–25 seconds. The cost is output token generation — three smart replies plus two alternatives, written in Japanese and Korean — not model thinking, so it cannot be tuned away without cutting the feature.
+Analysis usually takes 20–30 seconds, but the tail is long — 79 seconds is the slowest run observed. Most of the cost is output token generation: three smart replies plus two alternatives, written in Japanese and Korean.
+
+The rest is model thinking, and that part is deliberate. The backend runs Gemini at `thinking-level: high`. At `low` the model code-switches mid-sentence and writes Japanese replies with Korean and English spliced in (`予算や schedule 面で`), which the backend then has to discard — two of every three replies were being thrown away. See `PROMPT_DESIGN.md` in [kotona-analyzer](https://github.com/2daKaizen-gun/kotona-analyzer) for the measurements. Speed here costs correctness, so it is not tuned down.
 
 A bare spinner reads as a hang at that length, so `ProgressIndicator` walks through the stages the backend actually performs. The timings are measured estimates; the server does not stream progress.
 
 Two consequences worth knowing:
 
 - `maxDuration = 120` is set on the analyze route handler. The framework default would cut the request off first.
-- `src/lib/backend.ts` uses a 90-second `AbortController` timeout, well above the observed worst case.
+- `src/lib/backend.ts` uses a 110-second `AbortController` timeout — above the observed worst case, and below `maxDuration` so our own message reaches the user before the framework cuts in.
 
 ## Layout
 
