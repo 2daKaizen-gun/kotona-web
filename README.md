@@ -18,6 +18,8 @@ npm install
 npm run dev                            # http://localhost:3000
 ```
 
+Node 24 is pinned in `.nvmrc` (`nvm use` / `fnm use` pick it up); Next.js 16 needs at least 20.9, which `engines` in `package.json` records.
+
 `.env.local` defaults work out of the box for local development:
 
 | Variable | Default | Notes |
@@ -72,6 +74,19 @@ Two consequences worth knowing:
 
 - `maxDuration = 120` is set on the analyze route handler. The framework default would cut the request off first.
 - `src/lib/backend.ts` uses a 110-second `AbortController` timeout — above the observed worst case, and below `maxDuration` so our own message reaches the user before the framework cuts in.
+
+## Checks
+
+GitHub Actions (`.github/workflows/ci.yml`) runs on every push to `main` and every pull request:
+
+```bash
+npm ci
+npm run typecheck    # next typegen && tsc --noEmit
+npm run lint
+npm run build
+```
+
+`typecheck` runs `next typegen` first because globals such as `LayoutProps` and `RouteContext` only exist after Next.js generates them. CI does not check that `api.d.ts` matches the backend — that would need Spring Boot and MySQL inside the workflow — so regenerate it by hand after backend DTO changes.
 
 ## Layout
 
