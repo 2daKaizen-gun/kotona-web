@@ -25,6 +25,16 @@ npm run dev                            # http://localhost:3000
 | `KOTONA_API_URL` | `http://localhost:8081` | Backend base URL |
 | `KOTONA_API_KEY` | *(empty)* | Only needed if the backend sets `API_KEY` |
 
+## Pages
+
+| Path | What it does |
+|---|---|
+| `/` | Analyze a sentence — score, risk, 本音 / 建前, smart replies |
+| `/history` | Past analyses, newest first. Expand a row to see its full result again; delete with a second click |
+| `/phrases` | Business phrase dictionary with a situation filter. Add, edit and delete entries |
+
+Phrases that ship with the backend (its `data.sql` seed) come back on the next backend restart even if deleted. That is the backend's intended behaviour, so the default dictionary cannot be emptied by accident.
+
 ## Architecture: why a BFF
 
 The browser never calls the backend directly.
@@ -35,7 +45,7 @@ Browser  ──▶  Next.js route handler  ──▶  Spring Boot  ──▶  Ge
               server-only — holds the API key
 ```
 
-The backend protects `/analyze` and `/api/history` with an `X-API-KEY` header. If the browser sent that header itself, the key would sit in the JavaScript bundle for anyone to read — security in appearance only.
+The backend protects `/analyze`, `/api/history` and dictionary writes (`POST` / `PUT` / `DELETE` on `/api/phrases`) with an `X-API-KEY` header; dictionary reads stay open. If the browser sent that header itself, the key would sit in the JavaScript bundle for anyone to read — security in appearance only.
 
 Instead, `src/app/api/*` route handlers run server-side and read `KOTONA_API_KEY`. The absence of a `NEXT_PUBLIC_` prefix is what keeps it out of the client bundle. All backend calls are funnelled through `src/lib/backend.ts`, which is imported only by those handlers.
 
@@ -69,9 +79,13 @@ Two consequences worth knowing:
 src/
   app/
     api/            BFF route handlers — server-only, hold the API key
-    page.tsx
-  components/       AnalyzeForm, ResultView, ProgressIndicator
-  lib/backend.ts    every backend call lives here
+    page.tsx        analyze
+    history/        analysis history
+    phrases/        phrase dictionary
+  components/       AnalyzeForm, ResultView, ProgressIndicator, HistoryList,
+                    PhraseDictionary, PhraseForm, SiteNav
+  lib/backend.ts    every backend call lives here — server-only
+  lib/situations.ts situation labels, safe to import from client components
   types/api.d.ts    generated — do not edit
 openapi/            checked-in copy of the backend spec
 ```
