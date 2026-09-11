@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # 버전은 .nvmrc 한 곳에서 읽는다. 로컬(nvm/fnm)과 CI 가 같은 파일을 보므로 어긋날 수 없다.
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      # lockfile 을 커밋해 두었으니 그대로 설치한다. npm install 은 lockfile 을 고칠 수 있다.
+      - name: Install
+        run: npm ci
+
+      # next typegen 이 LayoutProps·RouteContext 같은 전역 타입을 만든다. 없으면 tsc 가 실패한다.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      # React Compiler 와 route handler 설정(maxDuration 등)은 빌드에서만 검증된다.
+      # 빌드는 백엔드를 부르지 않으므로 KOTONA_API_URL 없이 통과한다.
+      - name: Build
+        run: npm run build
+
+# api.d.ts 가 백엔드 스펙과 맞는지는 여기서 확인하지 않는다.
+# 그러려면 이 워크플로 안에 Spring Boot 와 MySQL 을 띄워야 해서, 린트·빌드 파이프라인의 범위를 넘는다(#2).

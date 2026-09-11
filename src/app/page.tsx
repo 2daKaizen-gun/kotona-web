@@ -2,7 +2,7 @@ import AnalyzeForm from "@/components/AnalyzeForm";
 
 export default function Home() {
   return (
-    <main className="mx-auto max-w-3xl px-6 py-12 sm:py-16">
+    <main className="mx-auto w-full max-w-3xl px-6 py-10 sm:py-12">
       <header className="mb-10">
         <h1 className="text-2xl font-semibold tracking-tight">KOTONA</h1>
         <p className="mt-2 text-sm leading-relaxed opacity-60">
@@ -13,19 +13,6 @@ export default function Home() {
       </header>
 
       <AnalyzeForm />
-
-      <footer className="mt-16 border-t border-black/10 pt-6 text-xs opacity-40 dark:border-white/15">
-        분석 엔진:{" "}
-        <a
-          href="https://github.com/2daKaizen-gun/kotona-analyzer"
-          target="_blank"
-          rel="noreferrer"
-          className="underline underline-offset-2"
-        >
-          kotona-analyzer
-        </a>{" "}
-        (Spring Boot + Gemini)
-      </footer>
     </main>
   );
 }

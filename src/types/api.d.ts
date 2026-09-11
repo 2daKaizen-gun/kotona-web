@@ -4,6 +4,54 @@
  */
 
 export interface paths {
+    "/api/phrases/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 숙어 수정
+         * @description 표현을 통째로 교체. 없는 id 면 404, 다른 행과 표현이 겹치면 409
+         */
+        put: operations["updatePhrase"];
+        post?: never;
+        /**
+         * 숙어 삭제
+         * @description 없는 id 면 404. 기본 사전(data.sql 시드)의 표현은 삭제해도 다음 부팅 때 다시 들어간다
+         */
+        delete: operations["deletePhrase"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/phrases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 모든 숙어 조회
+         * @description DB에 저장된 모든 비즈니스 숙어를 정중도 순으로 조회
+         */
+        get: operations["getAllPhrases"];
+        put?: never;
+        /**
+         * 숙어 추가
+         * @description 새 표현을 사전에 등록. 이미 있는 표현이면 409
+         */
+        post: operations["createPhrase"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/analyze": {
         parameters: {
             query?: never;
@@ -24,26 +72,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/phrases": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 모든 숙어 조회
-         * @description DB에 저장된 모든 비즈니스 숙어를 정중도 순으로 조회
-         */
-        get: operations["getAllPhrases"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/phrases/search": {
         parameters: {
             query?: never;
@@ -53,7 +81,7 @@ export interface paths {
         };
         /**
          * 상황별 숙어 검색
-         * @description EMAIL, MEETING 등 특정 상황에 맞는 숙어만 필터링
+         * @description EMAIL, MEETING 등 특정 상황에 맞는 숙어만 필터링. 허용되지 않은 값이면 400
          */
         get: operations["getPhrasesBySituation"];
         put?: never;
@@ -116,6 +144,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        PhraseRequestDTO: {
+            phrase: string;
+            meaning: string;
+            /** @enum {string} */
+            situation?: "EMAIL" | "MEETING" | "INTERVIEW" | "NEGOTIATION" | "CONFIRMATION" | "REQUEST" | "NOTIFICATION" | "CUSHION";
+            /** Format: int32 */
+            politenessLevel?: number;
+            usageExample?: string;
+        };
+        BusinessPhrase: {
+            /** Format: int64 */
+            id?: number;
+            phrase?: string;
+            meaning?: string;
+            /** @enum {string} */
+            situation?: "EMAIL" | "MEETING" | "INTERVIEW" | "NEGOTIATION" | "CONFIRMATION" | "REQUEST" | "NOTIFICATION" | "CUSHION";
+            /** Format: int32 */
+            politenessLevel?: number;
+            usageExample?: string;
+        };
         AnalyzeRequestDTO: {
             text: string;
             relationshipType?: string;
@@ -175,16 +223,6 @@ export interface components {
             text?: string;
             level?: string;
         };
-        BusinessPhrase: {
-            /** Format: int64 */
-            id?: number;
-            phrase?: string;
-            meaning?: string;
-            situation?: string;
-            /** Format: int32 */
-            politenessLevel?: number;
-            usageExample?: string;
-        };
         AnalysisHistory: {
             /** Format: int64 */
             id?: number;
@@ -206,6 +244,96 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    updatePhrase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhraseRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BusinessPhrase"];
+                };
+            };
+        };
+    };
+    deletePhrase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getAllPhrases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BusinessPhrase"][];
+                };
+            };
+        };
+    };
+    createPhrase: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhraseRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["BusinessPhrase"];
+                };
+            };
+        };
+    };
     analyze: {
         parameters: {
             query?: never;
@@ -230,31 +358,11 @@ export interface operations {
             };
         };
     };
-    getAllPhrases: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["BusinessPhrase"][];
-                };
-            };
-        };
-    };
     getPhrasesBySituation: {
         parameters: {
             query: {
                 /** @description 검색할 상황 태그(예: EMAIL, MEETING) */
-                situation: string;
+                situation: "EMAIL" | "MEETING" | "INTERVIEW" | "NEGOTIATION" | "CONFIRMATION" | "REQUEST" | "NOTIFICATION" | "CUSHION";
             };
             header?: never;
             path?: never;

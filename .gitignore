@@ -32,6 +32,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# 값이 없는 템플릿이다. README 의 첫 단계가 이 파일을 복사한다.
+!.env.local.example
 
 # vercel
 .vercel
