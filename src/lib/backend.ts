@@ -3,6 +3,7 @@ import type { components } from "@/types/api";
 export type NuanceResponse = components["schemas"]["NuanceResponseDTO"];
 export type AnalyzeRequest = components["schemas"]["AnalyzeRequestDTO"];
 export type BusinessPhrase = components["schemas"]["BusinessPhrase"];
+export type PhraseRequest = components["schemas"]["PhraseRequestDTO"];
 export type AnalysisHistory = components["schemas"]["AnalysisHistory"];
 
 export type RelationshipType = "INTERNAL" | "EXTERNAL" | "INTERVIEW";
@@ -68,7 +69,7 @@ async function callBackend<T>(path: string, options: FetchOptions = {}): Promise
     if (error instanceof BackendError) throw error;
 
     if (error instanceof Error && error.name === "AbortError") {
-      throw new BackendError(504, "분석이 시간 내에 끝나지 않았습니다. 다시 시도해 주세요.");
+      throw new BackendError(504, "요청이 시간 내에 끝나지 않았습니다. 다시 시도해 주세요.");
     }
     // 백엔드가 안 떠 있을 때가 대부분이라 그렇게 안내한다.
     throw new BackendError(
@@ -111,4 +112,17 @@ export function getPhrases(situation?: string) {
     ? `/api/phrases/search?situation=${encodeURIComponent(situation)}`
     : "/api/phrases";
   return callBackend<BusinessPhrase[]>(path, { timeoutMs: 15_000 });
+}
+
+// 사전 쓰기는 백엔드가 API 키를 요구한다. 읽기와 달리 브라우저에서 직접 부를 수 없는 이유다.
+export function createPhrase(body: PhraseRequest) {
+  return callBackend<BusinessPhrase>("/api/phrases", { method: "POST", body, timeoutMs: 15_000 });
+}
+
+export function updatePhrase(id: number, body: PhraseRequest) {
+  return callBackend<BusinessPhrase>(`/api/phrases/${id}`, { method: "PUT", body, timeoutMs: 15_000 });
+}
+
+export function deletePhrase(id: number) {
+  return callBackend<void>(`/api/phrases/${id}`, { method: "DELETE", timeoutMs: 15_000 });
 }
