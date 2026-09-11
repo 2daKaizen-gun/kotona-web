@@ -3,13 +3,13 @@
 import { useState } from "react";
 import type { NuanceResponse } from "@/lib/backend";
 
-const RISK_STYLES: Record<string, { label: string; className: string }> = {
+export const RISK_STYLES: Record<string, { label: string; className: string }> = {
   SAFE: { label: "안전", className: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" },
   CAUTION: { label: "주의", className: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" },
   DANGER: { label: "위험", className: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400" },
 };
 
-const CATEGORY_LABELS: Record<string, string> = {
+export const CATEGORY_LABELS: Record<string, string> = {
   EMAIL: "비즈니스 메일",
   INTERVIEW: "면접",
   MEETING: "회의",
