@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const LINKS = [
   { href: "/", label: "분석" },
   { href: "/history", label: "이력" },
+  { href: "/phrases", label: "사전" },
 ];
 
 export default function SiteNav() {
