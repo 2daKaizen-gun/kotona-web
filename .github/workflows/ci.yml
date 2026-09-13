@@ -32,6 +32,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # 예시 데이터는 백엔드 없이 배포된 사이트가 보여 주는 전부라, 여기가 깨지면
+      # 화면이 바로 깨진다. 순수 함수라 DB 도 브라우저도 필요 없다.
+      - name: Test
+        run: npm test
+
       # React Compiler 와 route handler 설정(maxDuration 등)은 빌드에서만 검증된다.
       # 빌드는 백엔드를 부르지 않으므로 KOTONA_API_URL 없이 통과한다.
       - name: Build
