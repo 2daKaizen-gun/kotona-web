@@ -26,6 +26,7 @@ Node 24 is pinned in `.nvmrc` (`nvm use` / `fnm use` pick it up); Next.js 16 nee
 |---|---|---|
 | `KOTONA_API_URL` | `http://localhost:8081` | Backend base URL |
 | `KOTONA_API_KEY` | *(empty)* | Only needed if the backend sets `API_KEY` |
+| `KOTONA_DEMO` | *(empty)* | `true` serves prepared samples instead of calling the backend |
 
 ## Pages
 
@@ -36,6 +37,27 @@ Node 24 is pinned in `.nvmrc` (`nvm use` / `fnm use` pick it up); Next.js 16 nee
 | `/phrases` | Business phrase dictionary with a situation filter. Add, edit and delete entries |
 
 Phrases that ship with the backend (its `data.sql` seed) come back on the next backend restart even if deleted. That is the backend's intended behaviour, so the default dictionary cannot be emptied by accident.
+
+## Demo mode
+
+The deployed site has no backend behind it, so it runs on prepared samples.
+
+Set `KOTONA_DEMO=true` and reads return fixtures from `src/lib/demo-data.ts` —
+real analyser output, copied verbatim — while writes are refused with a 403 that
+explains why. An amber banner sits above the navigation on every page saying the
+data is a sample and nothing typed is stored.
+
+That banner is what makes this honest rather than deceptive, and the reason it is
+a coloured bar rather than a footnote. The result card carries a "샘플" chip too,
+since a screenshot of just the score is how a demo actually gets shared.
+
+It is an explicit flag, never an automatic fallback. Dropping into demo mode
+whenever the backend is unreachable would mean a production outage quietly
+serving invented analyses as real — the exact failure the feature exists to
+prevent. A configured backend that does not answer still produces an error.
+
+**`KOTONA_DEMO` is read at build time** for `/`, `/history` and `/phrases`, which
+are statically prerendered. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Architecture: why a BFF
 
