@@ -4,6 +4,8 @@ Frontend for [**kotona-analyzer**](https://github.com/2daKaizen-gun/kotona-analy
 
 Next.js 16 (App Router) · TypeScript · Tailwind CSS 4
 
+**Live: https://kotona-web.vercel.app/** — running in [demo mode](#demo-mode), since the backend is not hosted. The scores and replies there are prepared samples, and the site says so on every page.
+
 ## Getting started
 
 The backend must be running first.
