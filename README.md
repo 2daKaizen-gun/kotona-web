@@ -32,7 +32,7 @@ Node 24 is pinned in `.nvmrc` (`nvm use` / `fnm use` pick it up); Next.js 16 nee
 | Path | What it does |
 |---|---|
 | `/` | Analyze a sentence — score, risk, 本音 / 建前, smart replies |
-| `/history` | Past analyses, newest first. Expand a row to see its full result again; delete with a second click |
+| `/history` | Past analyses, newest first, 20 at a time behind a "더 보기" button. Expanding a row fetches that record's stored result on demand; delete with a second click |
 | `/phrases` | Business phrase dictionary with a situation filter. Add, edit and delete entries |
 
 Phrases that ship with the backend (its `data.sql` seed) come back on the next backend restart even if deleted. That is the backend's intended behaviour, so the default dictionary cannot be emptied by accident.
