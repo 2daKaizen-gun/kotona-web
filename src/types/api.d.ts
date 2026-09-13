@@ -99,10 +99,35 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["getAllHistory"];
+        /**
+         * 분석 이력 목록
+         * @description 최신순 요약 목록. 저장된 분석 결과 전체는 포함되지 않는다 — 한 건을 펼칠 때 상세 조회를 쓴다.
+         */
+        get: operations["getHistory"];
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/history/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 분석 이력 상세
+         * @description 저장된 분석 결과 전체(fullAnalysisJson)를 포함한 한 건.
+         */
+        get: operations["getHistoryDetail"];
+        put?: never;
+        post?: never;
+        /** 분석 이력 삭제 */
+        delete: operations["deleteHistory"];
         options?: never;
         head?: never;
         patch?: never;
@@ -119,22 +144,6 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/history/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete: operations["deleteHistory"];
         options?: never;
         head?: never;
         patch?: never;
@@ -222,6 +231,29 @@ export interface components {
         SuggestionDTO: {
             text?: string;
             level?: string;
+        };
+        AnalysisHistorySummaryDTO: {
+            /** Format: int64 */
+            id?: number;
+            userInput?: string;
+            /** Format: int32 */
+            totalScore?: number;
+            category?: string;
+            riskLevel?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        PageResponseAnalysisHistorySummaryDTO: {
+            content?: components["schemas"]["AnalysisHistorySummaryDTO"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
         };
         AnalysisHistory: {
             /** Format: int64 */
@@ -381,9 +413,14 @@ export interface operations {
             };
         };
     };
-    getAllHistory: {
+    getHistory: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 0부터 시작하는 페이지 번호 */
+                page?: number;
+                /** @description 페이지 크기 (최대 100) */
+                size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -396,8 +433,50 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["AnalysisHistory"][];
+                    "*/*": components["schemas"]["PageResponseAnalysisHistorySummaryDTO"];
                 };
+            };
+        };
+    };
+    getHistoryDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["AnalysisHistory"];
+                };
+            };
+        };
+    };
+    deleteHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -420,26 +499,6 @@ export interface operations {
                         [key: string]: Record<string, never>;
                     };
                 };
-            };
-        };
-    };
-    deleteHistory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

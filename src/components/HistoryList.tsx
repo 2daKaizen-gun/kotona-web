@@ -1,38 +1,68 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import type { AnalysisHistory, NuanceResponse } from "@/lib/backend";
+import type { AnalysisHistorySummary, HistoryPage, NuanceResponse } from "@/lib/backend";
 import ResultView, { CATEGORY_LABELS, RISK_STYLES } from "./ResultView";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" });
 
+const PAGE_SIZE = 20;
+
 export default function HistoryList() {
-  const [items, setItems] = useState<AnalysisHistory[] | null>(null);
+  const [items, setItems] = useState<AnalysisHistorySummary[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [nextPage, setNextPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  /** 한 페이지를 가져와 뒤에 잇는다. 첫 페이지면 목록을 새로 만든다. */
+  const loadPage = useCallback(async (page: number) => {
+    const response = await fetch(`/api/history?page=${page}&size=${PAGE_SIZE}`);
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? "이력을 불러오지 못했습니다.");
+    }
+
+    const result = data as HistoryPage;
+    setItems((current) =>
+      page === 0 ? (result.content ?? []) : [...(current ?? []), ...(result.content ?? [])],
+    );
+    setTotal(result.totalElements ?? 0);
+    setHasMore(result.hasNext ?? false);
+    setNextPage(page + 1);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const response = await fetch("/api/history");
-        const data = await response.json();
+        await loadPage(0);
+      } catch (loadError) {
         if (cancelled) return;
-        if (!response.ok) {
-          setError(data.error ?? "이력을 불러오지 못했습니다.");
-          return;
-        }
-        setItems(data as AnalysisHistory[]);
-      } catch {
-        if (!cancelled) setError("네트워크 오류가 발생했습니다.");
+        setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
+        setItems([]);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadPage]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    setError(null);
+    try {
+      await loadPage(nextPage);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   /** 성공하면 목록에서 빼고 true. 실패하면 목록은 그대로 두고 오류를 보여 준다. */
   async function remove(id: number): Promise<boolean> {
@@ -45,6 +75,7 @@ export default function HistoryList() {
         return false;
       }
       setItems((current) => current?.filter((item) => item.id !== id) ?? null);
+      setTotal((current) => Math.max(0, current - 1));
       return true;
     } catch {
       setError("네트워크 오류가 발생했습니다.");
@@ -66,7 +97,7 @@ export default function HistoryList() {
 
       {items === null && !error && <p className="text-sm opacity-50">불러오는 중…</p>}
 
-      {items?.length === 0 && (
+      {items?.length === 0 && !error && (
         <p className="rounded-xl border border-dashed border-black/15 px-6 py-10 text-center text-sm opacity-60 dark:border-white/20">
           아직 분석 이력이 없습니다.{" "}
           <Link href="/" className="underline underline-offset-2">
@@ -76,11 +107,30 @@ export default function HistoryList() {
       )}
 
       {items && items.length > 0 && (
-        <ul className="space-y-3">
-          {items.map((item) => (
-            <HistoryItem key={item.id} item={item} onDelete={remove} />
-          ))}
-        </ul>
+        <>
+          <p className="text-xs opacity-50">
+            전체 {total}건 중 {items.length}건 표시
+          </p>
+
+          <ul className="space-y-3">
+            {items.map((item) => (
+              <HistoryItem key={item.id} item={item} onDelete={remove} />
+            ))}
+          </ul>
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="w-full rounded-lg border border-black/10 px-4 py-3 text-sm transition
+                         hover:bg-black/[0.03] disabled:opacity-40
+                         dark:border-white/15 dark:hover:bg-white/5"
+            >
+              {loadingMore ? "불러오는 중…" : "더 보기"}
+            </button>
+          )}
+        </>
       )}
     </div>
   );
@@ -90,15 +140,42 @@ function HistoryItem({
   item,
   onDelete,
 }: {
-  item: AnalysisHistory;
+  item: AnalysisHistorySummary;
   onDelete: (id: number) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // 저장된 분석 결과는 목록에 실려 오지 않는다. 펼칠 때 그 행만 따로 가져온다.
+  const [detail, setDetail] = useState<NuanceResponse | null>(null);
+  const [detailState, setDetailState] = useState<"idle" | "loading" | "failed">("idle");
+
   const risk = item.riskLevel ? RISK_STYLES[item.riskLevel] : undefined;
-  const result = open ? parseResult(item.fullAnalysisJson) : null;
+
+  async function toggle() {
+    if (open) {
+      setOpen(false);
+      return;
+    }
+    setOpen(true);
+
+    // 한 번 받아 온 뒤로는 다시 접었다 펴도 재요청하지 않는다.
+    if (detail || detailState === "loading" || item.id === undefined) return;
+
+    setDetailState("loading");
+    try {
+      const response = await fetch(`/api/history/${item.id}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
+
+      const parsed = parseResult(data.fullAnalysisJson);
+      setDetail(parsed);
+      setDetailState(parsed ? "idle" : "failed");
+    } catch {
+      setDetailState("failed");
+    }
+  }
 
   async function handleDelete() {
     if (item.id === undefined) return;
@@ -113,12 +190,7 @@ function HistoryItem({
   return (
     <li className="rounded-xl border border-black/10 dark:border-white/15">
       <div className="flex items-start gap-4 p-4">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          className="min-w-0 flex-1 text-left"
-        >
+        <button type="button" onClick={toggle} aria-expanded={open} className="min-w-0 flex-1 text-left">
           <p className="line-clamp-2 text-sm leading-relaxed">{item.userInput}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
             <span className="font-medium tabular-nums">{item.totalScore ?? 0}점</span>
@@ -169,8 +241,10 @@ function HistoryItem({
 
       {open && (
         <div className="border-t border-black/10 p-4 dark:border-white/15">
-          {result ? (
-            <ResultView result={result} />
+          {detail ? (
+            <ResultView result={detail} />
+          ) : detailState === "loading" ? (
+            <p className="text-sm opacity-50">분석 결과를 불러오는 중…</p>
           ) : (
             <p className="text-sm opacity-60">저장된 분석 결과를 읽을 수 없습니다.</p>
           )}

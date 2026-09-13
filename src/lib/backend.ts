@@ -5,6 +5,8 @@ export type AnalyzeRequest = components["schemas"]["AnalyzeRequestDTO"];
 export type BusinessPhrase = components["schemas"]["BusinessPhrase"];
 export type PhraseRequest = components["schemas"]["PhraseRequestDTO"];
 export type AnalysisHistory = components["schemas"]["AnalysisHistory"];
+export type AnalysisHistorySummary = components["schemas"]["AnalysisHistorySummaryDTO"];
+export type HistoryPage = components["schemas"]["PageResponseAnalysisHistorySummaryDTO"];
 
 export type RelationshipType = "INTERNAL" | "EXTERNAL" | "INTERVIEW";
 export type RiskLevel = "SAFE" | "CAUTION" | "DANGER";
@@ -99,8 +101,17 @@ export function analyze(text: string, relationshipType: RelationshipType) {
   });
 }
 
-export function getHistory() {
-  return callBackend<AnalysisHistory[]>("/api/history", { timeoutMs: 15_000 });
+/**
+ * 이력 목록. 요약만 담기므로 저장된 분석 결과 전체는 여기 없다 —
+ * 한 건을 펼칠 때 getHistoryDetail 로 그 행만 가져온다.
+ */
+export function getHistory(page = 0, size = 20) {
+  const query = new URLSearchParams({ page: String(page), size: String(size) });
+  return callBackend<HistoryPage>(`/api/history?${query}`, { timeoutMs: 15_000 });
+}
+
+export function getHistoryDetail(id: number) {
+  return callBackend<AnalysisHistory>(`/api/history/${id}`, { timeoutMs: 15_000 });
 }
 
 export function deleteHistory(id: number) {
