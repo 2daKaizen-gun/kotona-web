@@ -20,7 +20,14 @@ export const CATEGORY_LABELS: Record<string, string> = {
 /** 백엔드의 배점: 정중도 40 / 간접성 30 / 에티켓 30 */
 const METRIC_MAX = { politeness: 40, indirectness: 30, etiquette: 30 } as const;
 
-export default function ResultView({ result }: { result: NuanceResponse }) {
+export default function ResultView({
+  result,
+  sample = false,
+}: {
+  result: NuanceResponse;
+  /** 예시 데이터인지. 결과 카드만 잘려 공유돼도 알아볼 수 있도록 여기에도 표시한다. */
+  sample?: boolean;
+}) {
   const risk = RISK_STYLES[result.riskAnalysis?.riskLevel ?? "SAFE"] ?? RISK_STYLES.SAFE;
 
   return (
@@ -32,6 +39,12 @@ export default function ResultView({ result }: { result: NuanceResponse }) {
             <span className="text-lg opacity-40">/ 100</span>
           </div>
           <div className="flex items-center gap-2">
+            {sample && (
+              <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1
+                               text-xs font-medium text-amber-800 dark:text-amber-200">
+                샘플
+              </span>
+            )}
             {result.category && (
               <span className="rounded-full border border-black/10 px-3 py-1 text-xs dark:border-white/15">
                 {CATEGORY_LABELS[result.category] ?? result.category}

@@ -1,4 +1,5 @@
 import AnalyzeForm from "@/components/AnalyzeForm";
+import { DEMO_MODE } from "@/lib/demo-mode";
 
 export default function Home() {
   return (
@@ -12,7 +13,7 @@ export default function Home() {
         </p>
       </header>
 
-      <AnalyzeForm />
+      <AnalyzeForm demo={DEMO_MODE} />
     </main>
   );
 }

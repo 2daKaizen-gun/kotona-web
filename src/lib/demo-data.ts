@@ -309,8 +309,17 @@ export const DEMO_HISTORY: AnalysisHistory[] = HISTORY_SOURCE.map((row) => ({
   createdAt: row.createdAt,
 }));
 
+// 필드를 하나씩 적는다. 스프레드로 fullAnalysisJson 만 빼면 어느 필드가 요약에 실리는지
+// 코드만 봐서는 알 수 없고, 백엔드 요약 DTO 와 어긋나도 눈치채기 어렵다.
 export const DEMO_HISTORY_SUMMARIES: AnalysisHistorySummary[] = DEMO_HISTORY.map(
-  ({ fullAnalysisJson: _ignored, ...summary }) => summary,
+  ({ id, userInput, totalScore, category, riskLevel, createdAt }) => ({
+    id,
+    userInput,
+    totalScore,
+    category,
+    riskLevel,
+    createdAt,
+  }),
 );
 
 /** 예시 이력을 페이지로 잘라 준다. 백엔드의 PageResponse 와 같은 모양이어야 한다. */
