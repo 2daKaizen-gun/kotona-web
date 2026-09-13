@@ -1,4 +1,11 @@
 import type { components } from "@/types/api";
+import { DEMO_MODE } from "@/lib/demo-mode";
+import {
+  DEMO_PHRASES,
+  demoHistoryPage,
+  findDemoHistory,
+  pickDemoAnalysis,
+} from "@/lib/demo-data";
 
 export type NuanceResponse = components["schemas"]["NuanceResponseDTO"];
 export type AnalyzeRequest = components["schemas"]["AnalyzeRequestDTO"];
@@ -95,6 +102,9 @@ async function readErrorMessage(response: Response): Promise<string> {
 }
 
 export function analyze(text: string, relationshipType: RelationshipType) {
+  if (DEMO_MODE) {
+    return Promise.resolve(pickDemoAnalysis(text));
+  }
   return callBackend<NuanceResponse>("/analyze", {
     method: "POST",
     body: { text, relationshipType },
@@ -106,11 +116,20 @@ export function analyze(text: string, relationshipType: RelationshipType) {
  * 한 건을 펼칠 때 getHistoryDetail 로 그 행만 가져온다.
  */
 export function getHistory(page = 0, size = 20) {
+  if (DEMO_MODE) {
+    return Promise.resolve(demoHistoryPage(page, size));
+  }
   const query = new URLSearchParams({ page: String(page), size: String(size) });
   return callBackend<HistoryPage>(`/api/history?${query}`, { timeoutMs: 15_000 });
 }
 
 export function getHistoryDetail(id: number) {
+  if (DEMO_MODE) {
+    const found = findDemoHistory(id);
+    return found
+      ? Promise.resolve(found)
+      : Promise.reject(new BackendError(404, `id=${id} 인 분석 이력을 찾을 수 없습니다.`));
+  }
   return callBackend<AnalysisHistory>(`/api/history/${id}`, { timeoutMs: 15_000 });
 }
 
@@ -119,6 +138,11 @@ export function deleteHistory(id: number) {
 }
 
 export function getPhrases(situation?: string) {
+  if (DEMO_MODE) {
+    return Promise.resolve(
+      situation ? DEMO_PHRASES.filter((phrase) => phrase.situation === situation) : DEMO_PHRASES,
+    );
+  }
   const path = situation
     ? `/api/phrases/search?situation=${encodeURIComponent(situation)}`
     : "/api/phrases";

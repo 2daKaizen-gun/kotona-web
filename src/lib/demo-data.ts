@@ -2,6 +2,7 @@ import type {
   AnalysisHistory,
   AnalysisHistorySummary,
   BusinessPhrase,
+  HistoryPage,
   NuanceResponse,
 } from "@/lib/backend";
 
@@ -311,3 +312,24 @@ export const DEMO_HISTORY: AnalysisHistory[] = HISTORY_SOURCE.map((row) => ({
 export const DEMO_HISTORY_SUMMARIES: AnalysisHistorySummary[] = DEMO_HISTORY.map(
   ({ fullAnalysisJson: _ignored, ...summary }) => summary,
 );
+
+/** 예시 이력을 페이지로 잘라 준다. 백엔드의 PageResponse 와 같은 모양이어야 한다. */
+export function demoHistoryPage(page: number, size: number): HistoryPage {
+  const safeSize = Math.min(100, Math.max(1, size));
+  const safePage = Math.max(0, page);
+  const start = safePage * safeSize;
+  const content = DEMO_HISTORY_SUMMARIES.slice(start, start + safeSize);
+
+  return {
+    content,
+    page: safePage,
+    size: safeSize,
+    totalElements: DEMO_HISTORY_SUMMARIES.length,
+    totalPages: Math.ceil(DEMO_HISTORY_SUMMARIES.length / safeSize),
+    hasNext: start + safeSize < DEMO_HISTORY_SUMMARIES.length,
+  };
+}
+
+export function findDemoHistory(id: number): AnalysisHistory | undefined {
+  return DEMO_HISTORY.find((row) => row.id === id);
+}
