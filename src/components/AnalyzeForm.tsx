@@ -17,7 +17,7 @@ const SAMPLES = [
   "よろしく",
 ];
 
-export default function AnalyzeForm() {
+export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
   const [text, setText] = useState("");
   const [relationshipType, setRelationshipType] = useState<RelationshipType>("INTERNAL");
   const [result, setResult] = useState<NuanceResponse | null>(null);
@@ -134,7 +134,7 @@ export default function AnalyzeForm() {
         </div>
       )}
 
-      {result && <ResultView result={result} />}
+      {result && <ResultView result={result} sample={demo} />}
     </div>
   );
 }
