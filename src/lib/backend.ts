@@ -101,6 +101,22 @@ async function readErrorMessage(response: Response): Promise<string> {
   return `요청이 실패했습니다 (HTTP ${response.status}).`;
 }
 
+/**
+ * 예시를 보여 주는 중에는 저장할 곳이 없다.
+ *
+ * <p>성공한 척하는 선택지도 있었지만 그러지 않는다. 서버리스에서는 요청 사이에 상태가
+ * 남지 않으므로 새로고침하면 되돌아가고, 무엇보다 사용자가 저장됐다고 믿게 만든다.
+ * 403 은 "요청은 이해했으나 거절한다" 이고, 지금 상황이 정확히 그렇다.
+ */
+function demoWriteRefused<T>(): Promise<T> {
+  return Promise.reject(
+    new BackendError(
+      403,
+      "예시를 보여 주는 중이라 변경할 수 없습니다. 분석 서버에 연결하면 사용할 수 있습니다.",
+    ),
+  );
+}
+
 export function analyze(text: string, relationshipType: RelationshipType) {
   if (DEMO_MODE) {
     return Promise.resolve(pickDemoAnalysis(text));
@@ -134,6 +150,7 @@ export function getHistoryDetail(id: number) {
 }
 
 export function deleteHistory(id: number) {
+  if (DEMO_MODE) return demoWriteRefused();
   return callBackend<void>(`/api/history/${id}`, { method: "DELETE", timeoutMs: 15_000 });
 }
 
@@ -151,13 +168,16 @@ export function getPhrases(situation?: string) {
 
 // 사전 쓰기는 백엔드가 API 키를 요구한다. 읽기와 달리 브라우저에서 직접 부를 수 없는 이유다.
 export function createPhrase(body: PhraseRequest) {
+  if (DEMO_MODE) return demoWriteRefused();
   return callBackend<BusinessPhrase>("/api/phrases", { method: "POST", body, timeoutMs: 15_000 });
 }
 
 export function updatePhrase(id: number, body: PhraseRequest) {
+  if (DEMO_MODE) return demoWriteRefused();
   return callBackend<BusinessPhrase>(`/api/phrases/${id}`, { method: "PUT", body, timeoutMs: 15_000 });
 }
 
 export function deletePhrase(id: number) {
+  if (DEMO_MODE) return demoWriteRefused();
   return callBackend<void>(`/api/phrases/${id}`, { method: "DELETE", timeoutMs: 15_000 });
 }
