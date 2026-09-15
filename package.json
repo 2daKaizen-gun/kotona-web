@@ -2,8 +2,10 @@
   "name": "kotona-web",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "npm@11.19.0",
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.0.0",
+    "npm": ">=11.19.0"
   },
   "scripts": {
     "dev": "next dev",
