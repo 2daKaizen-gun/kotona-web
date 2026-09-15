@@ -21,6 +21,12 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
+      # package.json 의 packageManager(npm@11.19.0)를 실제로 적용한다.
+      # 이게 없으면 각자 설치된 npm 이 쓰이고, 버전이 다르면 lockfile 이 어긋나
+      # npm ci 가 깨진다 — 이번 주에만 두 번 겪었다(49d3cd0, 782fe63).
+      - name: Enable Corepack
+        run: corepack enable npm
+
       # lockfile 을 커밋해 두었으니 그대로 설치한다. npm install 은 lockfile 을 고칠 수 있다.
       - name: Install
         run: npm ci

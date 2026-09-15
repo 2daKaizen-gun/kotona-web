@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { getPhrases, createPhrase, BackendError, type PhraseRequest } from "@/lib/backend";
 
 export async function GET(request: Request) {
-  const situation = new URL(request.url).searchParams.get("situation")?.trim();
+  const params = new URL(request.url).searchParams;
+  const situation = params.get("situation")?.trim();
+
+  // 백엔드가 상한(100)과 하한을 다시 걸어 주므로 여기서는 숫자로만 만들어 넘긴다.
+  const page = toNumber(params.get("page"), 0);
+  const size = toNumber(params.get("size"), 20);
 
   try {
-    return NextResponse.json(await getPhrases(situation || undefined));
+    return NextResponse.json(await getPhrases(situation || undefined, page, size));
   } catch (error) {
     return toErrorResponse(error, "숙어를 불러오지 못했습니다.");
   }
@@ -32,4 +37,9 @@ function toErrorResponse(error: unknown, fallback: string) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
   return NextResponse.json({ error: fallback }, { status: 500 });
+}
+
+function toNumber(raw: string | null, fallback: number) {
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
 }

@@ -4,6 +4,7 @@ import {
   DEMO_HISTORY_SUMMARIES,
   DEMO_PHRASES,
   demoHistoryPage,
+  demoPhrasePage,
   findDemoHistory,
   pickDemoAnalysis,
 } from "@/lib/demo-data";
@@ -155,5 +156,44 @@ describe("숙어 사전 예시", () => {
     const ids = DEMO_PHRASES.map((phrase) => phrase.id);
 
     expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("숙어 페이지 자르기", () => {
+  it("백엔드와 같은 정렬을 따른다 — 정중도 내림차순, 같으면 id 오름차순", () => {
+    // 예시가 다르게 정렬되면 백엔드 있을 때와 없을 때 화면 순서가 달라진다
+    const rows = demoPhrasePage(undefined, 0, 100).content!;
+    const keys = rows.map((row) => [-(row.politenessLevel ?? 0), row.id ?? 0]);
+
+    expect(keys).toEqual([...keys].sort((a, b) => a[0] - b[0] || a[1] - b[1]));
+  });
+
+  it("상황으로 거른다", () => {
+    const page = demoPhrasePage("CUSHION", 0, 20);
+
+    expect(page.content).toHaveLength(1);
+    expect(page.content![0].situation).toBe("CUSHION");
+    expect(page.totalElements).toBe(1);
+  });
+
+  it("거른 뒤의 건수로 페이지를 센다", () => {
+    // 전체 건수로 세면 필터를 건 상태에서 있지도 않은 다음 페이지를 알리게 된다
+    const page = demoPhrasePage("EMAIL", 0, 20);
+
+    expect(page.totalElements).toBe(page.content!.length);
+    expect(page.hasNext).toBe(false);
+  });
+
+  it("페이지가 겹치지 않는다", () => {
+    const first = demoPhrasePage(undefined, 0, 3).content!.map((row) => row.id);
+    const second = demoPhrasePage(undefined, 1, 3).content!.map((row) => row.id);
+
+    expect(first.filter((id) => second.includes(id))).toHaveLength(0);
+  });
+
+  it("이력 목록과 같은 상한·하한을 적용한다", () => {
+    expect(demoPhrasePage(undefined, 0, 9999).size).toBe(100);
+    expect(demoPhrasePage(undefined, 0, 0).size).toBe(1);
+    expect(demoPhrasePage(undefined, -5, 20).page).toBe(0);
   });
 });

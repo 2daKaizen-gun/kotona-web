@@ -1,45 +1,80 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { BusinessPhrase, PhraseRequest } from "@/lib/backend";
+import { useCallback, useEffect, useState } from "react";
+import type { BusinessPhrase, PhrasePage, PhraseRequest } from "@/lib/backend";
 import { SITUATION_LABELS, SITUATIONS, type Situation } from "@/lib/situations";
 import PhraseForm from "./PhraseForm";
 
 type Filter = Situation | "ALL";
+
+const PAGE_SIZE = 20;
 
 /** null: 폼 닫힘, "new": 추가 폼, number: 그 id 의 수정 폼 */
 type Editing = null | "new" | number;
 
 export default function PhraseDictionary() {
   const [phrases, setPhrases] = useState<BusinessPhrase[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [nextPage, setNextPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("ALL");
   const [editing, setEditing] = useState<Editing>(null);
   // 쓰기가 성공할 때마다 올려서 목록을 다시 받는다. 정렬(정중도 순)을 백엔드에 맡기기 위해서다.
   const [version, setVersion] = useState(0);
 
+  /** 한 페이지를 가져와 뒤에 잇는다. 첫 페이지면 목록을 새로 만든다. */
+  const loadPage = useCallback(async (page: number, situation: Filter) => {
+    const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
+    if (situation !== "ALL") query.set("situation", situation);
+
+    const response = await fetch(`/api/phrases?${query}`);
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error ?? "사전을 불러오지 못했습니다.");
+    }
+
+    const result = data as PhrasePage;
+    setPhrases((current) =>
+      page === 0 ? (result.content ?? []) : [...(current ?? []), ...(result.content ?? [])],
+    );
+    setTotal(result.totalElements ?? 0);
+    setHasMore(result.hasNext ?? false);
+    setNextPage(page + 1);
+  }, []);
+
+  // 필터가 바뀌면 서버에 다시 묻는다. 예전에는 전체를 받아 화면에서 걸렀지만,
+  // 사용자가 표현을 추가할 수 있게 된 뒤로는 전체를 받는다는 전제가 성립하지 않는다.
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
       try {
-        const response = await fetch("/api/phrases");
-        const data = await response.json();
+        await loadPage(0, filter);
+      } catch (loadError) {
         if (cancelled) return;
-        if (!response.ok) {
-          setError(data.error ?? "사전을 불러오지 못했습니다.");
-          return;
-        }
-        setPhrases(data as BusinessPhrase[]);
-      } catch {
-        if (!cancelled) setError("네트워크 오류가 발생했습니다.");
+        setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
+        setPhrases([]);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [version]);
+  }, [filter, version, loadPage]);
+
+  async function loadMore() {
+    setLoadingMore(true);
+    setError(null);
+    try {
+      await loadPage(nextPage, filter);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
+    } finally {
+      setLoadingMore(false);
+    }
+  }
 
   /** 성공하면 null, 실패하면 폼에 보여 줄 문구(백엔드의 400·409 문구 그대로). */
   async function save(request: PhraseRequest, id?: number): Promise<string | null> {
@@ -82,10 +117,7 @@ export default function PhraseDictionary() {
     }
   }
 
-  // 사전은 수십 건 규모라 한 번 받아 두고 화면에서 거른다.
-  // 칩마다 건수를 보여 줄 수 있고, 필터를 바꿀 때 왕복이 없다.
-  const visible = phrases?.filter((phrase) => filter === "ALL" || phrase.situation === filter) ?? [];
-  const countOf = (situation: Situation) => phrases?.filter((p) => p.situation === situation).length ?? 0;
+  const visible = phrases ?? [];
 
   return (
     <div className="space-y-6">
@@ -105,12 +137,11 @@ export default function PhraseDictionary() {
         <>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div role="group" aria-label="상황별 필터" className="flex flex-wrap gap-2">
-              <FilterChip label="전체" count={phrases.length} active={filter === "ALL"} onClick={() => setFilter("ALL")} />
+              <FilterChip label="전체" active={filter === "ALL"} onClick={() => setFilter("ALL")} />
               {SITUATIONS.map((situation) => (
                 <FilterChip
                   key={situation}
                   label={SITUATION_LABELS[situation]}
-                  count={countOf(situation)}
                   active={filter === situation}
                   onClick={() => setFilter(situation)}
                 />
@@ -129,6 +160,12 @@ export default function PhraseDictionary() {
           </div>
 
           {editing === "new" && <PhraseForm onSubmit={(request) => save(request)} onCancel={() => setEditing(null)} />}
+
+          {visible.length > 0 && (
+            <p className="text-xs opacity-50">
+              {filter === "ALL" ? "전체" : SITUATION_LABELS[filter]} {total}건 중 {visible.length}건 표시
+            </p>
+          )}
 
           {visible.length === 0 ? (
             <p className="rounded-xl border border-dashed border-black/15 px-6 py-10 text-center text-sm opacity-60 dark:border-white/20">
@@ -156,20 +193,33 @@ export default function PhraseDictionary() {
               )}
             </ul>
           )}
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="w-full rounded-lg border border-black/10 px-4 py-3 text-sm transition
+                         hover:bg-black/[0.03] disabled:opacity-40
+                         dark:border-white/15 dark:hover:bg-white/5"
+            >
+              {loadingMore ? "불러오는 중…" : "더 보기"}
+            </button>
+          )}
         </>
       )}
     </div>
   );
 }
 
+// 건수는 더 이상 보여 주지 않는다. 한 페이지만 받으므로 상황별 전체 건수를 알 수 없고,
+// 받아 온 것만 세어 보여 주면 틀린 숫자가 된다. 현재 목록의 전체 건수는 위에 따로 적는다.
 function FilterChip({
   label,
-  count,
   active,
   onClick,
 }: {
   label: string;
-  count: number;
   active: boolean;
   onClick: () => void;
 }) {
@@ -184,7 +234,7 @@ function FilterChip({
           : "border-black/10 opacity-70 hover:opacity-100 dark:border-white/15"
       }`}
     >
-      {label} <span className="tabular-nums opacity-60">{count}</span>
+      {label}
     </button>
   );
 }

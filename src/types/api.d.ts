@@ -36,8 +36,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * 모든 숙어 조회
-         * @description DB에 저장된 모든 비즈니스 숙어를 정중도 순으로 조회
+         * 숙어 목록
+         * @description 정중도 높은 순으로 한 페이지. 사용자가 추가한 표현까지 포함한다.
          */
         get: operations["getAllPhrases"];
         put?: never;
@@ -232,6 +232,18 @@ export interface components {
             text?: string;
             level?: string;
         };
+        PageResponseBusinessPhrase: {
+            content?: components["schemas"]["BusinessPhrase"][];
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int64 */
+            totalElements?: number;
+            /** Format: int32 */
+            totalPages?: number;
+            hasNext?: boolean;
+        };
         AnalysisHistorySummaryDTO: {
             /** Format: int64 */
             id?: number;
@@ -324,7 +336,12 @@ export interface operations {
     };
     getAllPhrases: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 0부터 시작하는 페이지 번호 */
+                page?: number;
+                /** @description 페이지 크기 (최대 100) */
+                size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -337,7 +354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["BusinessPhrase"][];
+                    "*/*": components["schemas"]["PageResponseBusinessPhrase"];
                 };
             };
         };
@@ -395,6 +412,10 @@ export interface operations {
             query: {
                 /** @description 검색할 상황 태그(예: EMAIL, MEETING) */
                 situation: "EMAIL" | "MEETING" | "INTERVIEW" | "NEGOTIATION" | "CONFIRMATION" | "REQUEST" | "NOTIFICATION" | "CUSHION";
+                /** @description 0부터 시작하는 페이지 번호 */
+                page?: number;
+                /** @description 페이지 크기 (최대 100) */
+                size?: number;
             };
             header?: never;
             path?: never;
@@ -408,7 +429,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["BusinessPhrase"][];
+                    "*/*": components["schemas"]["PageResponseBusinessPhrase"];
                 };
             };
         };
