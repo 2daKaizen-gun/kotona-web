@@ -3,6 +3,7 @@ import type {
   AnalysisHistorySummary,
   BusinessPhrase,
   HistoryPage,
+  PhrasePage,
   NuanceResponse,
 } from "@/lib/backend";
 
@@ -341,4 +342,27 @@ export function demoHistoryPage(page: number, size: number): HistoryPage {
 
 export function findDemoHistory(id: number): AnalysisHistory | undefined {
   return DEMO_HISTORY.find((row) => row.id === id);
+}
+
+/** 예시 숙어를 페이지로 자른다. 백엔드와 같은 정렬(정중도 내림차순, id 오름차순)을 따른다. */
+export function demoPhrasePage(situation: string | undefined, page: number, size: number): PhrasePage {
+  const matching = situation
+    ? DEMO_PHRASES.filter((phrase) => phrase.situation === situation)
+    : DEMO_PHRASES;
+  const sorted = [...matching].sort(
+    (left, right) => (right.politenessLevel ?? 0) - (left.politenessLevel ?? 0) || (left.id ?? 0) - (right.id ?? 0),
+  );
+
+  const safeSize = Math.min(100, Math.max(1, size));
+  const safePage = Math.max(0, page);
+  const start = safePage * safeSize;
+
+  return {
+    content: sorted.slice(start, start + safeSize),
+    page: safePage,
+    size: safeSize,
+    totalElements: sorted.length,
+    totalPages: Math.ceil(sorted.length / safeSize),
+    hasNext: start + safeSize < sorted.length,
+  };
 }

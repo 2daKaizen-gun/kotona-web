@@ -1,8 +1,8 @@
 import type { components } from "@/types/api";
 import { DEMO_MODE } from "@/lib/demo-mode";
 import {
-  DEMO_PHRASES,
   demoHistoryPage,
+  demoPhrasePage,
   findDemoHistory,
   pickDemoAnalysis,
 } from "@/lib/demo-data";
@@ -14,6 +14,7 @@ export type PhraseRequest = components["schemas"]["PhraseRequestDTO"];
 export type AnalysisHistory = components["schemas"]["AnalysisHistory"];
 export type AnalysisHistorySummary = components["schemas"]["AnalysisHistorySummaryDTO"];
 export type HistoryPage = components["schemas"]["PageResponseAnalysisHistorySummaryDTO"];
+export type PhrasePage = components["schemas"]["PageResponseBusinessPhrase"];
 
 export type RelationshipType = "INTERNAL" | "EXTERNAL" | "INTERVIEW";
 export type RiskLevel = "SAFE" | "CAUTION" | "DANGER";
@@ -154,16 +155,15 @@ export function deleteHistory(id: number) {
   return callBackend<void>(`/api/history/${id}`, { method: "DELETE", timeoutMs: 15_000 });
 }
 
-export function getPhrases(situation?: string) {
+export function getPhrases(situation: string | undefined, page = 0, size = 20) {
   if (DEMO_MODE) {
-    return Promise.resolve(
-      situation ? DEMO_PHRASES.filter((phrase) => phrase.situation === situation) : DEMO_PHRASES,
-    );
+    return Promise.resolve(demoPhrasePage(situation, page, size));
   }
+  const query = new URLSearchParams({ page: String(page), size: String(size) });
   const path = situation
-    ? `/api/phrases/search?situation=${encodeURIComponent(situation)}`
-    : "/api/phrases";
-  return callBackend<BusinessPhrase[]>(path, { timeoutMs: 15_000 });
+    ? `/api/phrases/search?situation=${encodeURIComponent(situation)}&${query}`
+    : `/api/phrases?${query}`;
+  return callBackend<PhrasePage>(path, { timeoutMs: 15_000 });
 }
 
 // 사전 쓰기는 백엔드가 API 키를 요구한다. 읽기와 달리 브라우저에서 직접 부를 수 없는 이유다.
