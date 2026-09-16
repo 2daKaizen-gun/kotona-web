@@ -20,7 +20,7 @@ export interface paths {
         post?: never;
         /**
          * 숙어 삭제
-         * @description 없는 id 면 404. 기본 사전(data.sql 시드)의 표현은 삭제해도 다음 부팅 때 다시 들어간다
+         * @description 없는 id 면 404. 삭제는 되돌릴 수 없다 — 기본 사전의 표현도 마찬가지다.
          */
         delete: operations["deletePhrase"];
         options?: never;
