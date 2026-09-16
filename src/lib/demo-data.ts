@@ -216,7 +216,7 @@ export function pickDemoAnalysis(text: string): NuanceResponse {
   return SAMPLES.find((sample) => sample.match(text))?.result ?? SOFT_REJECTION;
 }
 
-/** 백엔드 data.sql 의 기본 사전과 같은 목록. */
+/** 백엔드 기본 사전(R__seed_default_phrases.sql)과 같은 목록. */
 export const DEMO_PHRASES: BusinessPhrase[] = [
   {
     id: 1,

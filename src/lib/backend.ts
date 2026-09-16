@@ -8,7 +8,6 @@ import {
 } from "@/lib/demo-data";
 
 export type NuanceResponse = components["schemas"]["NuanceResponseDTO"];
-export type AnalyzeRequest = components["schemas"]["AnalyzeRequestDTO"];
 export type BusinessPhrase = components["schemas"]["BusinessPhrase"];
 export type PhraseRequest = components["schemas"]["PhraseRequestDTO"];
 export type AnalysisHistory = components["schemas"]["AnalysisHistory"];
@@ -17,7 +16,6 @@ export type HistoryPage = components["schemas"]["PageResponseAnalysisHistorySumm
 export type PhrasePage = components["schemas"]["PageResponseBusinessPhrase"];
 
 export type RelationshipType = "INTERNAL" | "EXTERNAL" | "INTERVIEW";
-export type RiskLevel = "SAFE" | "CAUTION" | "DANGER";
 
 /**
  * 백엔드(Spring) 호출을 한 곳에 모은다.

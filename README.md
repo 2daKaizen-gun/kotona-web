@@ -38,7 +38,7 @@ Node 24 is pinned in `.nvmrc` (`nvm use` / `fnm use` pick it up); Next.js 16 nee
 | `/history` | Past analyses, newest first, 20 at a time behind a "더 보기" button. Expanding a row fetches that record's stored result on demand; delete with a second click |
 | `/phrases` | Business phrase dictionary with a situation filter. Add, edit and delete entries |
 
-Phrases that ship with the backend (its `data.sql` seed) come back on the next backend restart even if deleted. That is the backend's intended behaviour, so the default dictionary cannot be emptied by accident.
+Deleting a phrase is permanent, including the ones the backend ships with. They used to return on the next backend restart; that stopped when the seed became a Flyway repeatable migration, and this page said otherwise for a while.
 
 ## Demo mode
 
