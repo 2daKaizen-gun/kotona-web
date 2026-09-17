@@ -13,5 +13,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // e2e/ 는 Playwright 가 돌린다. 둘이 같은 파일을 집으면 서로의 API 로 실행되다 깨진다.
+    exclude: ["e2e/**", "node_modules/**"],
   },
 });
