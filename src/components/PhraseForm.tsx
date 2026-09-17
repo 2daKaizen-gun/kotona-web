@@ -38,15 +38,23 @@ export default function PhraseForm({
     setSaving(true);
     setError(null);
 
-    // 빈 선택은 undefined 로 보낸다. JSON 에서 빠지므로 백엔드에는 null 로 저장된다.
-    const message = await onSubmit({
-      phrase: phrase.trim(),
-      meaning: meaning.trim(),
-      situation: situation || undefined,
-      politenessLevel: politenessLevel === "" ? undefined : politenessLevel,
-      usageExample: usageExample.trim() || undefined,
-    });
+    let message: string | null;
+    try {
+      // 빈 선택은 undefined 로 보낸다. JSON 에서 빠지므로 백엔드에는 null 로 저장된다.
+      message = await onSubmit({
+        phrase: phrase.trim(),
+        meaning: meaning.trim(),
+        situation: situation || undefined,
+        politenessLevel: politenessLevel === "" ? undefined : politenessLevel,
+        usageExample: usageExample.trim() || undefined,
+      });
+    } catch {
+      // onSubmit 은 실패를 문구로 돌려주기로 되어 있지만, 던지는 경우도 막아 둔다.
+      // 여기서 빠져나가면 saving 이 true 로 남아 폼이 "저장 중…" 에 영영 갇힌다.
+      message = "저장하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+    }
 
+    // 성공(null)이면 부모가 폼을 닫으므로 saving 을 되돌릴 필요가 없다.
     if (message) {
       setError(message);
       setSaving(false);
