@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getHistory, BackendError } from "@/lib/backend";
+import { toNumber } from "@/lib/request-params";
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
@@ -16,9 +17,4 @@ export async function GET(request: Request) {
     }
     return NextResponse.json({ error: "이력을 불러오지 못했습니다." }, { status: 500 });
   }
-}
-
-function toNumber(raw: string | null, fallback: number) {
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : fallback;
 }
