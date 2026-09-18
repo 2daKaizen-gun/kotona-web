@@ -15,7 +15,24 @@ export type AnalysisHistorySummary = components["schemas"]["AnalysisHistorySumma
 export type HistoryPage = components["schemas"]["PageResponseAnalysisHistorySummaryDTO"];
 export type PhrasePage = components["schemas"]["PageResponseBusinessPhrase"];
 
-export type RelationshipType = "INTERNAL" | "EXTERNAL" | "INTERVIEW";
+/**
+ * 백엔드 enum 에서 그대로 가져온다. 손으로 다시 적어 두면 값이 늘어날 때 조용히 갈라지고,
+ * 화면에는 있지만 백엔드가 모르는 선택지(또는 그 반대)가 생긴다.
+ */
+export type RelationshipType = NonNullable<
+  components["schemas"]["AnalyzeRequestDTO"]["relationshipType"]
+>;
+
+/** 런타임 확인용. 타입은 컴파일되면 사라지므로, 들어온 값은 값으로 확인해야 한다. */
+export const RELATIONSHIP_TYPES = [
+  "INTERNAL",
+  "EXTERNAL",
+  "INTERVIEW",
+] as const satisfies readonly RelationshipType[];
+
+export function isRelationshipType(value: unknown): value is RelationshipType {
+  return (RELATIONSHIP_TYPES as readonly string[]).includes(value as string);
+}
 
 /**
  * 백엔드(Spring) 호출을 한 곳에 모은다.

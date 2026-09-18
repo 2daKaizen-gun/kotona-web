@@ -175,7 +175,8 @@ export interface components {
         };
         AnalyzeRequestDTO: {
             text: string;
-            relationshipType?: string;
+            /** @enum {string} */
+            relationshipType?: "INTERNAL" | "EXTERNAL" | "INTERVIEW";
         };
         EvaluationDTO: {
             summary?: string;
