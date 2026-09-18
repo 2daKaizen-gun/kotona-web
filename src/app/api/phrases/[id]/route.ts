@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { updatePhrase, deletePhrase, BackendError, type PhraseRequest } from "@/lib/backend";
+import { toId as parseId } from "@/lib/request-params";
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -36,11 +37,6 @@ export async function DELETE(_request: Request, context: Context) {
   } catch (error) {
     return toErrorResponse(error, "숙어를 삭제하지 못했습니다.");
   }
-}
-
-function parseId(raw: string): number | null {
-  const id = Number(raw);
-  return Number.isInteger(id) && id > 0 ? id : null;
 }
 
 function toErrorResponse(error: unknown, fallback: string) {

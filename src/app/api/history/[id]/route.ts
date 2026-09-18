@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { deleteHistory, getHistoryDetail, BackendError } from "@/lib/backend";
+import { toId } from "@/lib/request-params";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const id = await parseId(context);
@@ -29,9 +30,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ id:
 }
 
 async function parseId(context: { params: Promise<{ id: string }> }) {
-  const { id } = await context.params;
-  const numericId = Number(id);
-  return Number.isInteger(numericId) && numericId > 0 ? numericId : null;
+  return toId((await context.params).id);
 }
 
 function toErrorResponse(error: unknown, fallback: string) {

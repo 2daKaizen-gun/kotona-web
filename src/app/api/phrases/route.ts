@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPhrases, createPhrase, BackendError, type PhraseRequest } from "@/lib/backend";
+import { toNumber } from "@/lib/request-params";
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
@@ -37,9 +38,4 @@ function toErrorResponse(error: unknown, fallback: string) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
   return NextResponse.json({ error: fallback }, { status: 500 });
-}
-
-function toNumber(raw: string | null, fallback: number) {
-  const parsed = Number(raw);
-  return Number.isFinite(parsed) ? parsed : fallback;
 }
