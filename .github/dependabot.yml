@@ -1,0 +1,30 @@
+# 의존성 업데이트를 주 1회 PR 로 받는다.
+#
+# 이 파일이 생기기 전에는 운영 의존성(sharp)에 high 등급 보안 권고가 걸려 있는데도
+# 아무도 몰랐다. npm audit 을 누군가 손으로 돌려야만 보였다.
+#
+# 마이너·패치는 한 PR 로 묶는다. 하나씩 오면 매주 여러 개가 쌓여 결국 아무도 안 본다.
+# 메이저(TypeScript 7, ESLint 10 같은 것)는 따로 온다 — 깨질 수 있는 변경은 하나씩 본다.
+# 보안 업데이트는 이 묶음과 상관없이 바로 따로 열린다.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: chore
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
