@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { NuanceResponse, RelationshipType } from "@/lib/backend";
+import { ANALYZE_TEXT_MAX } from "@/lib/limits";
 import ResultView from "./ResultView";
 import ProgressIndicator from "./ProgressIndicator";
 
@@ -24,9 +25,13 @@ export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // 백엔드가 세는 것은 앞뒤 공백을 걷어낸 문장이다. 같은 것을 센다.
+  const length = text.trim().length;
+  const tooLong = length > ANALYZE_TEXT_MAX;
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!text.trim() || loading) return;
+    if (!text.trim() || tooLong || loading) return;
 
     setLoading(true);
     setError(null);
@@ -59,16 +64,34 @@ export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
           <label htmlFor="text" className="mb-2 block text-sm font-medium">
             분석할 일본어 문장
           </label>
+          {/*
+            maxLength 를 쓰지 않는다. 브라우저는 한도를 넘는 붙여넣기를 말없이 잘라내서,
+            긴 메일을 붙여넣으면 뒷부분이 사라진 채로 분석된다. 전부 받아 두고 넘었다고 말한다.
+          */}
           <textarea
             id="text"
             value={text}
             onChange={(event) => setText(event.target.value)}
+            aria-describedby="text-length"
+            aria-invalid={tooLong}
             rows={4}
             placeholder="例：ご提案の件、社内で検討させていただきます。"
             className="w-full resize-y rounded-lg border border-black/15 bg-white px-4 py-3 text-base
                        outline-none transition focus:border-black/40
                        dark:border-white/15 dark:bg-white/5 dark:focus:border-white/40"
           />
+          <p
+            id="text-length"
+            className={`mt-1 text-right text-xs ${
+              tooLong ? "font-medium text-red-600 dark:text-red-400" : "opacity-50"
+            }`}
+          >
+            {tooLong
+              ? `${ANALYZE_TEXT_MAX.toLocaleString()}자까지 분석할 수 있습니다. ${(
+                  length - ANALYZE_TEXT_MAX
+                ).toLocaleString()}자를 줄여 주세요.`
+              : `${length.toLocaleString()} / ${ANALYZE_TEXT_MAX.toLocaleString()}`}
+          </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="text-xs opacity-60">예시:</span>
             {SAMPLES.map((sample) => (
@@ -114,7 +137,7 @@ export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
 
         <button
           type="submit"
-          disabled={loading || !text.trim()}
+          disabled={loading || !text.trim() || tooLong}
           className="w-full rounded-lg bg-foreground px-6 py-3 font-medium text-background
                      transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >

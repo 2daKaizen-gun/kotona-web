@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { BusinessPhrase, PhraseRequest } from "@/lib/backend";
+import { MEANING_MAX, PHRASE_MAX, USAGE_EXAMPLE_MAX } from "@/lib/limits";
 import { SITUATION_LABELS, SITUATIONS, type Situation } from "@/lib/situations";
 
 const FIELD =
@@ -74,7 +75,7 @@ export default function PhraseForm({
           <input
             lang="ja"
             required
-            maxLength={255}
+            maxLength={PHRASE_MAX}
             value={phrase}
             onChange={(event) => setPhrase(event.target.value)}
             placeholder="例：ご査収ください"
@@ -85,7 +86,7 @@ export default function PhraseForm({
           뜻
           <input
             required
-            maxLength={255}
+            maxLength={MEANING_MAX}
             value={meaning}
             onChange={(event) => setMeaning(event.target.value)}
             placeholder="예: 확인해 주십시오"
@@ -129,6 +130,8 @@ export default function PhraseForm({
         <textarea
           lang="ja"
           rows={2}
+          // 예문은 한두 문장이라 붙여넣기가 잘릴 일이 드물다. 표현·뜻과 같은 방식으로 막는다.
+          maxLength={USAGE_EXAMPLE_MAX}
           value={usageExample}
           onChange={(event) => setUsageExample(event.target.value)}
           placeholder="例：資料を添付いたしましたので、ご査収ください。"

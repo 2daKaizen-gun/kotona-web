@@ -97,6 +97,17 @@ describe("POST /api/analyze", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("한도를 넘는 문장은 백엔드까지 가지 않는다", async () => {
+    const { POST } = await import("@/app/api/analyze/route");
+    const { ANALYZE_TEXT_MAX } = await import("@/lib/limits");
+
+    const response = await POST(post("http://x/api/analyze", { text: "あ".repeat(ANALYZE_TEXT_MAX + 1) }));
+
+    expect(response.status).toBe(400);
+    expect((await response.json()).error).toContain(String(ANALYZE_TEXT_MAX));
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("본문이 JSON 이 아니면 400 이다", async () => {
     const { POST } = await import("@/app/api/analyze/route");
 

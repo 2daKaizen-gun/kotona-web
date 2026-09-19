@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import PhraseForm from "@/components/PhraseForm";
 import type { PhraseRequest } from "@/lib/backend";
 import { DEMO_PHRASES } from "@/lib/demo-data";
+import { MEANING_MAX, PHRASE_MAX, USAGE_EXAMPLE_MAX } from "@/lib/limits";
 
 /**
  * 폼은 사용자가 입력한 것을 백엔드가 받을 모양으로 바꾼다. 공백을 걷어내고,
@@ -138,6 +139,15 @@ describe("PhraseForm", () => {
 
     expect(await screen.findByRole("alert")).toBeInTheDocument();
     await waitFor(() => expect(saveButton()).toBeEnabled());
+  });
+
+  it("필드 한도가 백엔드와 같다", () => {
+    // 예문에만 한도가 없어서, 너무 긴 예문은 "이미 등록된 표현" 이라는 엉뚱한 이유로 거절됐다
+    setup();
+
+    expect(phraseInput()).toHaveAttribute("maxLength", String(PHRASE_MAX));
+    expect(meaningInput()).toHaveAttribute("maxLength", String(MEANING_MAX));
+    expect(screen.getByLabelText(/예문/)).toHaveAttribute("maxLength", String(USAGE_EXAMPLE_MAX));
   });
 
   it("취소를 누르면 부모에게 알린다", async () => {
