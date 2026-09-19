@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AnalyzeForm from "@/components/AnalyzeForm";
+import { ANALYZE_TEXT_MAX } from "@/lib/limits";
 import { pickDemoAnalysis } from "@/lib/demo-data";
 
 /**
@@ -133,5 +134,59 @@ describe("AnalyzeForm", () => {
     await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
 
     expect(await screen.findByText("샘플")).toBeInTheDocument();
+  });
+
+  describe("길이 한도", () => {
+    // 2,000 자를 한 글자씩 치면 느리다. 붙여넣기처럼 한 번에 넣는다.
+    function paste(value: string) {
+      fireEvent.change(screen.getByLabelText("분석할 일본어 문장"), { target: { value } });
+    }
+
+    it("몇 자를 썼는지 보여 준다", () => {
+      render(<AnalyzeForm />);
+
+      paste("検討します");
+
+      expect(screen.getByText(`5 / ${ANALYZE_TEXT_MAX.toLocaleString()}`)).toBeInTheDocument();
+    });
+
+    it("한도까지는 분석할 수 있다", () => {
+      render(<AnalyzeForm />);
+
+      paste("あ".repeat(ANALYZE_TEXT_MAX));
+
+      expect(screen.getByRole("button", { name: "분석하기" })).toBeEnabled();
+    });
+
+    it("넘으면 요청을 보내지 않고 얼마나 줄여야 하는지 말한다", async () => {
+      // 25초를 기다린 뒤에 거절당하지 않게 화면에서 먼저 막는다
+      render(<AnalyzeForm />);
+
+      paste("あ".repeat(ANALYZE_TEXT_MAX + 3));
+
+      expect(screen.getByRole("button", { name: "분석하기" })).toBeDisabled();
+      expect(screen.getByText(/3자를 줄여 주세요/)).toBeInTheDocument();
+      expect(screen.getByLabelText("분석할 일본어 문장")).toHaveAttribute("aria-invalid", "true");
+      expect(fetch).not.toHaveBeenCalled();
+    });
+
+    it("붙여넣은 글을 잘라내지 않는다", () => {
+      // maxLength 였다면 브라우저가 뒷부분을 말없이 버리고, 잘린 문장이 분석됐다
+      render(<AnalyzeForm />);
+      const long = "あ".repeat(ANALYZE_TEXT_MAX + 100);
+
+      paste(long);
+
+      expect(screen.getByLabelText("분석할 일본어 문장")).toHaveValue(long);
+    });
+
+    it("앞뒤 공백은 세지 않는다", () => {
+      // 백엔드가 세는 것은 공백을 걷어낸 문장이다
+      render(<AnalyzeForm />);
+
+      paste(`  ${"あ".repeat(ANALYZE_TEXT_MAX)}  `);
+
+      expect(screen.getByRole("button", { name: "분석하기" })).toBeEnabled();
+    });
   });
 });

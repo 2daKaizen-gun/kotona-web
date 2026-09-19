@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyze, BackendError, isRelationshipType, RELATIONSHIP_TYPES } from "@/lib/backend";
+import { ANALYZE_TEXT_MAX } from "@/lib/limits";
 
 /** 백엔드 분석은 25초 안팎이라 기본 실행시간으로는 모자란다. */
 export const maxDuration = 120;
@@ -15,6 +16,13 @@ export async function POST(request: Request) {
   const text = typeof payload.text === "string" ? payload.text.trim() : "";
   if (!text) {
     return NextResponse.json({ error: "분석할 문장을 입력해 주세요." }, { status: 400 });
+  }
+  // 백엔드도 거절하지만, 화면을 거치지 않은 요청까지 왕복시킬 이유는 없다.
+  if (text.length > ANALYZE_TEXT_MAX) {
+    return NextResponse.json(
+      { error: `분석할 문장은 ${ANALYZE_TEXT_MAX}자 이하여야 합니다.` },
+      { status: 400 },
+    );
   }
 
   // 관계를 비워 두는 것은 허용한다 — 백엔드가 사내로 본다. 다만 모르는 값을 사내로
