@@ -108,13 +108,13 @@ npm ci
 npm run typecheck    # next typegen && tsc --noEmit
 npm run lint
 npm run build
-npm test             # 107 unit tests — Vitest + Testing Library
+npm test             # 116 unit tests — Vitest + Testing Library
 npm run test:e2e     # 12 browser tests — Playwright, Chromium
 ```
 
 `typecheck` runs `next typegen` first because globals such as `LayoutProps` and `RouteContext` only exist after Next.js generates them.
 
-The unit tests cover every component, the demo fixtures, and the route handlers against a stubbed backend — that last part is the branch demo mode never takes, so nothing else in CI runs it. The browser tests in `e2e/` follow a visitor through analyse, history and dictionary against a production build in demo mode. They need no backend, so CI runs them as they are. Playwright builds and starts the site on port 3100 itself; run `npx playwright install chromium` once beforehand. When a browser test fails, CI uploads its trace as an artifact.
+The unit tests cover every component, the demo fixtures, and the route handlers against a stubbed backend — that last part is the branch demo mode never takes, so nothing else in CI runs it. One of them compares the input limits in `src/lib/limits.ts` with the `maxLength` values in the checked-in spec, so a limit changed on the backend fails here until the form follows. The browser tests in `e2e/` follow a visitor through analyse, history and dictionary against a production build in demo mode. They need no backend, so CI runs them as they are. Playwright builds and starts the site on port 3100 itself; run `npx playwright install chromium` once beforehand. When a browser test fails, CI uploads its trace as an artifact.
 
 On Windows, if the user profile path contains non-ASCII characters, Playwright crashes silently (exit `0xC0000409`) when it compiles a spec containing Korean or Japanese text, because its compile cache lives under that profile. Move the cache:
 
@@ -137,6 +137,7 @@ src/
                     PhraseDictionary, PhraseForm, SiteNav, DemoBanner
   lib/backend.ts    every backend call lives here — server-only
   lib/demo-data.ts  demo-mode fixtures
+  lib/limits.ts     input limits, checked against the backend spec
   lib/request-params.ts  query and path parsing shared by the handlers
   lib/situations.ts situation labels, safe to import from client components
   types/api.d.ts    generated — do not edit
