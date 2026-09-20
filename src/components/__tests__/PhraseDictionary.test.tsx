@@ -156,12 +156,12 @@ describe("PhraseDictionary", () => {
       } as Response;
     });
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
 
     await userEvent.click(screen.getByRole("button", { name: "더 보기" }));
 
-    expect(await screen.findByText(DEMO_PHRASES[1].phrase)).toBeInTheDocument();
-    expect(screen.getByText(DEMO_PHRASES[0].phrase)).toBeInTheDocument();
+    expect(await screen.findByText(DEMO_PHRASES[1].phrase!)).toBeInTheDocument();
+    expect(screen.getByText(DEMO_PHRASES[0].phrase!)).toBeInTheDocument();
     expect(screen.getByText(/2건 중 2건 표시/)).toBeInTheDocument();
     // 마지막 페이지까지 왔으면 버튼은 사라진다
     expect(screen.queryByRole("button", { name: "더 보기" })).not.toBeInTheDocument();
@@ -170,18 +170,18 @@ describe("PhraseDictionary", () => {
   it("수정은 그 표현의 id 로 PUT 을 보낸다", async () => {
     routeFetch();
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
 
     await userEvent.click(screen.getAllByRole("button", { name: "수정" })[0]);
     // 수정 폼은 기존 값을 채우고 열린다
-    expect(screen.getByLabelText(/표현/)).toHaveValue(DEMO_PHRASES[0].phrase);
+    expect(screen.getByLabelText(/표현/)).toHaveValue(DEMO_PHRASES[0].phrase!);
     await userEvent.clear(screen.getByLabelText(/뜻/));
     await userEvent.type(screen.getByLabelText(/뜻/), "고친 뜻");
     await userEvent.click(screen.getByRole("button", { name: "저장" }));
 
     await waitFor(() => {
       const put = vi.mocked(fetch).mock.calls.find((call) => call[1]?.method === "PUT");
-      expect(put?.[0]).toBe(`/api/phrases/${DEMO_PHRASES[0].id}`);
+      expect(put?.[0]).toBe(`/api/phrases/${DEMO_PHRASES[0].id!}`);
       expect(JSON.parse(String(put?.[1]?.body)).meaning).toBe("고친 뜻");
     });
   });
@@ -190,7 +190,7 @@ describe("PhraseDictionary", () => {
     // 한 번 눌러 지워지면 잘못 누른 것을 되돌릴 방법이 없다
     routeFetch();
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
     const before = vi.mocked(fetch).mock.calls.length;
 
     await userEvent.click(screen.getAllByRole("button", { name: "삭제" })[0]);
@@ -199,7 +199,7 @@ describe("PhraseDictionary", () => {
 
     await waitFor(() => {
       const del = vi.mocked(fetch).mock.calls.find((call) => call[1]?.method === "DELETE");
-      expect(del?.[0]).toBe(`/api/phrases/${DEMO_PHRASES[0].id}`);
+      expect(del?.[0]).toBe(`/api/phrases/${DEMO_PHRASES[0].id!}`);
     });
     // 정렬은 백엔드가 한다. 화면에서 지우는 대신 다시 받아야 순서가 맞는다.
     await waitFor(() => expect(vi.mocked(fetch).mock.calls.length).toBeGreaterThan(before + 1));
@@ -217,13 +217,13 @@ describe("PhraseDictionary", () => {
       return { ok: true, status: 200, json: async () => pageOf(DEMO_PHRASES) } as Response;
     });
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
 
     await userEvent.click(screen.getAllByRole("button", { name: "삭제" })[0]);
     await userEvent.click(screen.getByRole("button", { name: "삭제 확인" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("변경할 수 없습니다");
-    expect(screen.getByText(DEMO_PHRASES[0].phrase)).toBeInTheDocument();
+    expect(screen.getByText(DEMO_PHRASES[0].phrase!)).toBeInTheDocument();
     // 다시 시도할 수 있어야 한다
     expect(screen.getAllByRole("button", { name: "삭제" })[0]).toBeInTheDocument();
   });
@@ -232,7 +232,7 @@ describe("PhraseDictionary", () => {
     // 저장은 됐는데 화면에 안 보이면 사용자는 실패한 줄 안다
     routeFetch();
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
     await userEvent.click(screen.getByRole("button", { name: "쿠션어" }));
     await screen.findByText("恐縮でございますが");
 
@@ -254,7 +254,7 @@ describe("PhraseDictionary", () => {
       return { ok: true, status: 200, json: async () => pageOf(DEMO_PHRASES) } as Response;
     });
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
 
     await userEvent.click(screen.getByRole("button", { name: "+ 표현 추가" }));
     await userEvent.type(screen.getByLabelText(/표현/), "テスト");
@@ -278,12 +278,12 @@ describe("PhraseDictionary", () => {
       return { ok: false, status: 503, json: async () => ({ error: "백엔드에 연결할 수 없습니다." }) } as Response;
     });
     render(<PhraseDictionary />);
-    await screen.findByText(DEMO_PHRASES[0].phrase);
+    await screen.findByText(DEMO_PHRASES[0].phrase!);
 
     await userEvent.click(screen.getByRole("button", { name: "더 보기" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("연결할 수 없습니다");
-    expect(screen.getByText(DEMO_PHRASES[0].phrase)).toBeInTheDocument();
+    expect(screen.getByText(DEMO_PHRASES[0].phrase!)).toBeInTheDocument();
   });
 
   it("목록을 못 불러오면 알린다", async () => {

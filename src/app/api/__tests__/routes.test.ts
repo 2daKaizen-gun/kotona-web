@@ -378,7 +378,7 @@ describe("예시 모드", () => {
   it("이력 상세도 예시에서 찾아 준다", async () => {
     const { GET } = await import("@/app/api/history/[id]/route");
     const list = await import("@/lib/demo-data");
-    const id = list.demoHistoryPage(0, 1).content[0].id;
+    const id = list.demoHistoryPage(0, 1).content![0]!.id!;
 
     const response = await GET(new Request("http://x"), { params: Promise.resolve({ id: String(id) }) });
 

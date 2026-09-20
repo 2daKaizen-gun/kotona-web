@@ -152,13 +152,13 @@ describe("HistoryList", () => {
   it("삭제 확인을 취소하면 아무것도 지우지 않는다", async () => {
     routeFetch();
     render(<HistoryList />);
-    await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput);
+    await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput!);
 
     await userEvent.click(screen.getAllByRole("button", { name: "삭제" })[0]);
     await userEvent.click(screen.getByRole("button", { name: "취소" }));
 
     expect(vi.mocked(fetch).mock.calls.some((call) => call[1]?.method === "DELETE")).toBe(false);
-    expect(screen.getByText(DEMO_HISTORY_SUMMARIES[0].userInput)).toBeInTheDocument();
+    expect(screen.getByText(DEMO_HISTORY_SUMMARIES[0].userInput!)).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "삭제" })[0]).toBeInTheDocument();
   });
 
@@ -179,14 +179,14 @@ describe("HistoryList", () => {
       } as Response;
     });
     render(<HistoryList />);
-    await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput);
+    await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput!);
 
     await userEvent.click(screen.getAllByRole("button", { name: "삭제" })[0]);
     await userEvent.click(screen.getByRole("button", { name: "삭제 확인" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("네트워크 오류");
     // 지워진 것처럼 보이면 사용자는 지워진 줄 안다
-    expect(screen.getByText(DEMO_HISTORY_SUMMARIES[0].userInput)).toBeInTheDocument();
+    expect(screen.getByText(DEMO_HISTORY_SUMMARIES[0].userInput!)).toBeInTheDocument();
   });
 
   it("상세를 가져오다 연결이 끊겨도 행은 펼쳐진 채로 알린다", async () => {
@@ -207,7 +207,7 @@ describe("HistoryList", () => {
     });
     render(<HistoryList />);
 
-    await userEvent.click(await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput));
+    await userEvent.click(await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput!));
 
     // 상세 파싱 실패와 같은 안내로 떨어진다 — 빈칸을 보여 주면 결과가 없는 것처럼 보인다
     expect(await screen.findByText(/읽을 수 없습니다/)).toBeInTheDocument();
