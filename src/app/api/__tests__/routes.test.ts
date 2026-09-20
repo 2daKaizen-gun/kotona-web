@@ -302,6 +302,50 @@ describe("/api/phrases", () => {
     expect(JSON.parse(lastCall().init.body as string)).toEqual(body);
   });
 
+  it("수정은 본문이 JSON 이 아니면 백엔드를 부르지 않는다", async () => {
+    const { PUT } = await import("@/app/api/phrases/[id]/route");
+
+    const response = await PUT(post("http://x/api/phrases/3", "{broken"), {
+      params: Promise.resolve({ id: "3" }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("삭제가 성공하면 본문 없이 204 다", async () => {
+    const { DELETE } = await import("@/app/api/phrases/[id]/route");
+    fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
+
+    const response = await DELETE(new Request("http://x"), { params: Promise.resolve({ id: "3" }) });
+
+    expect(response.status).toBe(204);
+    expect(await response.text()).toBe("");
+    expect(lastCall().init.method).toBe("DELETE");
+  });
+
+  it("백엔드가 없는 id 라고 하면 그대로 404 를 전한다", async () => {
+    const { PUT } = await import("@/app/api/phrases/[id]/route");
+    backendAnswers({ error: "id=99 인 표현을 찾을 수 없습니다." }, 404);
+
+    const response = await PUT(post("http://x/api/phrases/99", { phrase: "念のため", meaning: "만약" }), {
+      params: Promise.resolve({ id: "99" }),
+    });
+
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toContain("찾을 수 없습니다");
+  });
+
+  it("이력 목록도 백엔드의 상태코드를 그대로 옮긴다", async () => {
+    const { GET } = await import("@/app/api/history/route");
+    backendAnswers({ error: "요청이 너무 많습니다." }, 429);
+
+    const response = await GET(new Request("http://x/api/history"));
+
+    expect(response.status).toBe(429);
+    expect((await response.json()).error).toContain("너무 많습니다");
+  });
+
   it("id 가 0 이나 음수면 거절한다", async () => {
     const { DELETE } = await import("@/app/api/phrases/[id]/route");
 
@@ -310,5 +354,98 @@ describe("/api/phrases", () => {
       expect(response.status).toBe(400);
     }
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("예시 모드", () => {
+  // 배포된 사이트가 도는 방식이다. 브라우저 테스트가 덮지만, 읽기는 픽스처로 답하고
+  // 쓰기는 이유를 붙여 거절한다는 규칙 자체는 여기서 확인하는 편이 빠르다.
+  beforeEach(() => {
+    vi.resetModules();
+    process.env.KOTONA_DEMO = "true";
+  });
+
+  it("읽기는 백엔드를 부르지 않고 예시로 답한다", async () => {
+    const { GET } = await import("@/app/api/phrases/route");
+
+    const response = await GET(new Request("http://x/api/phrases"));
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).content.length).toBeGreaterThan(0);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("이력 상세도 예시에서 찾아 준다", async () => {
+    const { GET } = await import("@/app/api/history/[id]/route");
+    const list = await import("@/lib/demo-data");
+    const id = list.demoHistoryPage(0, 1).content![0]!.id!;
+
+    const response = await GET(new Request("http://x"), { params: Promise.resolve({ id: String(id) }) });
+
+    expect(response.status).toBe(200);
+    expect((await response.json()).id).toBe(id);
+  });
+
+  it("예시에 없는 이력은 404 다", async () => {
+    const { GET } = await import("@/app/api/history/[id]/route");
+
+    const response = await GET(new Request("http://x"), { params: Promise.resolve({ id: "99999" }) });
+
+    expect(response.status).toBe(404);
+  });
+
+  it("쓰기는 403 으로 거절하고 이유를 말한다", async () => {
+    // 조용히 성공한 척하면 사용자는 저장된 줄 알고 떠난다
+    const { POST } = await import("@/app/api/phrases/route");
+    const { DELETE } = await import("@/app/api/history/[id]/route");
+
+    const created = await POST(post("http://x/api/phrases", { phrase: "テスト", meaning: "테스트" }));
+    const deleted = await DELETE(new Request("http://x"), { params: Promise.resolve({ id: "1" }) });
+
+    expect(created.status).toBe(403);
+    expect((await created.json()).error).toContain("예시를 보여 주는 중이라");
+    expect(deleted.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("예상 못 한 오류", () => {
+  // callBackend 는 실패를 BackendError 로 감싸 준다. 그 약속이 깨졌을 때 route handler 가
+  // 무엇을 하는지 — 프레임워크의 기본 500 HTML 이 아니라 우리 JSON 이 나가는지 — 를 본다.
+  it("BackendError 가 아닌 오류는 500 과 우리 문구로 답한다", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/backend", async () => {
+      const actual = await vi.importActual<typeof import("@/lib/backend")>("@/lib/backend");
+      return { ...actual, getHistory: () => Promise.reject(new Error("컬렉션이 열리지 않았습니다")) };
+    });
+    const { GET } = await import("@/app/api/history/route");
+
+    const response = await GET(new Request("http://x/api/history"));
+
+    expect(response.status).toBe(500);
+    const body = await response.json();
+    expect(body.error).toBe("이력을 불러오지 못했습니다.");
+    // 원인 메시지는 내보내지 않는다
+    expect(JSON.stringify(body)).not.toContain("컬렉션");
+    vi.doUnmock("@/lib/backend");
+  });
+
+  it("분석에서 난 예상 못 한 오류도 마찬가지다", async () => {
+    vi.resetModules();
+    const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.doMock("@/lib/backend", async () => {
+      const actual = await vi.importActual<typeof import("@/lib/backend")>("@/lib/backend");
+      return { ...actual, analyze: () => Promise.reject(new Error("내부 사정")) };
+    });
+    const { POST } = await import("@/app/api/analyze/route");
+
+    const response = await POST(post("http://x/api/analyze", { text: "ご確認" }));
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error).toBe("알 수 없는 오류가 발생했습니다.");
+    // 원인은 서버 로그에만 남는다
+    expect(logged).toHaveBeenCalled();
+    logged.mockRestore();
+    vi.doUnmock("@/lib/backend");
   });
 });

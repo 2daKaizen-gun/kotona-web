@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import ResultView from "@/components/ResultView";
 import type { NuanceResponse } from "@/lib/backend";
 import { pickDemoAnalysis } from "@/lib/demo-data";
@@ -78,5 +79,41 @@ describe("ResultView", () => {
     expect(() =>
       render(<ResultView result={{ totalScore: 50, riskAnalysis: { riskLevel: "UNKNOWN" } }} />),
     ).not.toThrow();
+  });
+
+  describe("추천 답장 복사", () => {
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    /** jsdom 에는 클립보드가 없다. 쓰기 결과만 바꿔 끼운다. */
+    function stubClipboard(writeText: () => Promise<void>) {
+      vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText: vi.fn(writeText) } });
+    }
+
+    it("복사를 누르면 답장 본문이 클립보드로 간다", async () => {
+      // 답장은 그대로 붙여 넣으라고 만든 것이다. 손으로 옮겨 적으면 오타가 난다.
+      stubClipboard(async () => {});
+      render(<ResultView result={full} />);
+
+      await userEvent.click(screen.getAllByRole("button", { name: "복사" })[0]);
+
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(full.smartReplies?.[0]?.content);
+      expect(await screen.findByRole("button", { name: "복사됨" })).toBeInTheDocument();
+    });
+
+    it("클립보드 권한이 없으면 조용히 넘어간다", async () => {
+      // 본문은 화면에 그대로 보인다. 여기서 화면이 깨지면 읽을 수도 없게 된다.
+      stubClipboard(async () => {
+        throw new Error("NotAllowedError");
+      });
+      render(<ResultView result={full} />);
+
+      await userEvent.click(screen.getAllByRole("button", { name: "복사" })[0]);
+
+      await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalled());
+      expect(screen.getAllByRole("button", { name: "복사" })[0]).toBeInTheDocument();
+      expect(screen.getByText(String(full.smartReplies?.[0]?.content))).toBeInTheDocument();
+    });
   });
 });
