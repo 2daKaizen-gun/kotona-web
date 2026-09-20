@@ -108,13 +108,14 @@ npm ci
 npm run typecheck    # next typegen && tsc --noEmit
 npm run lint
 npm run build
-npm test             # 116 unit tests — Vitest + Testing Library
+npm test             # 138 unit tests — Vitest + Testing Library
+npm run test:coverage  # the same, with coverage and its floor
 npm run test:e2e     # 12 browser tests — Playwright, Chromium
 ```
 
 `typecheck` runs `next typegen` first because globals such as `LayoutProps` and `RouteContext` only exist after Next.js generates them.
 
-The unit tests cover every component, the demo fixtures, and the route handlers against a stubbed backend — that last part is the branch demo mode never takes, so nothing else in CI runs it. One of them compares the input limits in `src/lib/limits.ts` with the `maxLength` values in the checked-in spec, so a limit changed on the backend fails here until the form follows. The browser tests in `e2e/` follow a visitor through analyse, history and dictionary against a production build in demo mode. They need no backend, so CI runs them as they are. Playwright builds and starts the site on port 3100 itself; run `npx playwright install chromium` once beforehand. When a browser test fails, CI uploads its trace as an artifact.
+The unit tests cover every component, the demo fixtures, and the route handlers against a stubbed backend — that last part is the branch demo mode never takes, so nothing else in CI runs it. Coverage is measured on every run: 94% of lines, 85% of branches. CI writes the totals and the five least-covered files to the run summary, uploads the report, and fails below the floor in `vitest.config.mts`. `page.tsx` and `layout.tsx` are excluded, since server components cannot run meaningfully in jsdom and the browser tests cover what they do. One of them compares the input limits in `src/lib/limits.ts` with the `maxLength` values in the checked-in spec, so a limit changed on the backend fails here until the form follows. The browser tests in `e2e/` follow a visitor through analyse, history and dictionary against a production build in demo mode. They need no backend, so CI runs them as they are. Playwright builds and starts the site on port 3100 itself; run `npx playwright install chromium` once beforehand. When a browser test fails, CI uploads its trace as an artifact.
 
 On Windows, if the user profile path contains non-ASCII characters, Playwright crashes silently (exit `0xC0000409`) when it compiles a spec containing Korean or Japanese text, because its compile cache lives under that profile. Move the cache:
 

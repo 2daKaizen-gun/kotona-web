@@ -326,8 +326,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description 삭제됨 */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -493,8 +493,8 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description OK */
-            200: {
+            /** @description 삭제됨 */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
