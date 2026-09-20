@@ -40,8 +40,43 @@ jobs:
 
       # 예시 데이터는 백엔드 없이 배포된 사이트가 보여 주는 전부라, 여기가 깨지면
       # 화면이 바로 깨진다. 순수 함수라 DB 도 브라우저도 필요 없다.
+      # 커버리지까지 같이 잰다 — 바닥선 아래로 내려가면 여기서 실패한다.
       - name: Test
-        run: npm test
+        run: npm run test:coverage
+
+      # 합계만으로는 "사전 화면 하나가 60%" 같은 구멍이 보이지 않는다. 실행 요약에 적어 둔다.
+      - name: Coverage Summary
+        if: always()
+        run: |
+          [ -f coverage/coverage-summary.json ] || exit 0
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const data = JSON.parse(readFileSync("coverage/coverage-summary.json", "utf8"));
+            const { lines, branches, statements, functions } = data.total;
+            const out = [
+              "### Coverage",
+              `Lines **${lines.pct}%** · Branches **${branches.pct}%** · Statements **${statements.pct}%** · Functions **${functions.pct}%**`,
+            ];
+            const weakest = Object.entries(data)
+              .filter(([file]) => file !== "total")
+              .map(([file, value]) => [file.split("kotona-web/").pop(), value.statements.pct])
+              .filter(([, pct]) => pct < 95)
+              .sort((a, b) => a[1] - b[1])
+              .slice(0, 5);
+            if (weakest.length) {
+              out.push("", "| Least covered | % Statements |", "|---|---|");
+              for (const [file, pct] of weakest) out.push(`| \`${file}\` | ${pct}% |`);
+            }
+            console.log(out.join("\n"));
+          ' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: ignore
 
       # 브라우저로 사이트 전체를 돌린다. 데모 모드라 백엔드·DB·API 키가 없어도 되고,
       # 호출당 비용도 없다 — 보통 E2E 를 CI 에서 빼는 이유가 여기서는 성립하지 않는다.
