@@ -12,11 +12,11 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
 
       # 버전은 .nvmrc 한 곳에서 읽는다. 로컬(nvm/fnm)과 CI 가 같은 파일을 보므로 어긋날 수 없다.
       - name: Set up Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
