@@ -81,12 +81,12 @@ Instead, `src/app/api/*` route handlers run server-side and read `KOTONA_API_KEY
 
 ```bash
 curl http://localhost:8081/v3/api-docs -o openapi/kotona-api.json
-npx openapi-typescript@7.13.0 openapi/kotona-api.json -o src/types/api.d.ts
+npm run gen:types
 ```
 
 The backend derives that spec from its `NuanceResponseDTO` record tree, so a field added in Java propagates to the frontend types by rerunning the two commands above. Nothing is typed twice.
 
-The generator is run through `npx` at a pinned version rather than installed. Nothing imports it — it writes a file and exits — and as a dependency it declares `typescript: ^5.x`, which held the whole repository's TypeScript back.
+The generator is run through `npx` at a version pinned in the `gen:types` script rather than installed. Nothing imports it — it writes a file and exits — and as a dependency it declares `typescript: ^5.x`, which held the whole repository's TypeScript back.
 
 ## The 25-second wait
 

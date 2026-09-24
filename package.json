@@ -13,6 +13,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
+    "gen:types": "npx -y openapi-typescript@7.13.0 openapi/kotona-api.json -o src/types/api.d.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
