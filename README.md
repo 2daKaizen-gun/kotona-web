@@ -2,7 +2,7 @@
 
 Frontend for [**kotona-analyzer**](https://github.com/2daKaizen-gun/kotona-analyzer) — a Japanese business communication analyzer that reads the 本音 (true intent) behind the 建前 (public face).
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4
+Next.js 16 (App Router) · TypeScript 6 · Tailwind CSS 4
 
 **Live: https://kotona-web.vercel.app/** — running in [demo mode](#demo-mode), since the backend is not hosted. The scores and replies there are prepared samples, and the site says so on every page.
 
@@ -81,10 +81,12 @@ Instead, `src/app/api/*` route handlers run server-side and read `KOTONA_API_KEY
 
 ```bash
 curl http://localhost:8081/v3/api-docs -o openapi/kotona-api.json
-npx openapi-typescript openapi/kotona-api.json -o src/types/api.d.ts
+npm run gen:types
 ```
 
 The backend derives that spec from its `NuanceResponseDTO` record tree, so a field added in Java propagates to the frontend types by rerunning the two commands above. Nothing is typed twice.
+
+The generator is run through `npx` at a version pinned in the `gen:types` script rather than installed. Nothing imports it — it writes a file and exits — and as a dependency it declares `typescript: ^5.x`, which held the whole repository's TypeScript back.
 
 ## The 25-second wait
 
@@ -122,6 +124,8 @@ On Windows, if the user profile path contains non-ASCII characters, Playwright c
 ```bash
 PWTEST_CACHE_DIR=C:/pw-cache npm run test:e2e
 ```
+
+**TypeScript stays on 6 and ESLint on 9**, and Dependabot is told not to offer their next majors. Neither is held back by this code: `typescript-eslint` refuses to load on TypeScript 7 and says it is tracking support for 7.1, and the `eslint-plugin-react` that `eslint-config-next` depends on calls `context.getFilename()`, which ESLint 10 removed. When either lands upstream, delete the matching entry in `.github/dependabot.yml`.
 
 CI does not check that `api.d.ts` matches the backend — that would need Spring Boot and MySQL inside the workflow — so regenerate it by hand after backend DTO changes.
 
