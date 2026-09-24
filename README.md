@@ -2,7 +2,7 @@
 
 Frontend for [**kotona-analyzer**](https://github.com/2daKaizen-gun/kotona-analyzer) — a Japanese business communication analyzer that reads the 本音 (true intent) behind the 建前 (public face).
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS 4
+Next.js 16 (App Router) · TypeScript 6 · Tailwind CSS 4
 
 **Live: https://kotona-web.vercel.app/** — running in [demo mode](#demo-mode), since the backend is not hosted. The scores and replies there are prepared samples, and the site says so on every page.
 
