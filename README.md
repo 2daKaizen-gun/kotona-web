@@ -125,6 +125,8 @@ On Windows, if the user profile path contains non-ASCII characters, Playwright c
 PWTEST_CACHE_DIR=C:/pw-cache npm run test:e2e
 ```
 
+**TypeScript stays on 6 and ESLint on 9**, and Dependabot is told not to offer their next majors. Neither is held back by this code: `typescript-eslint` refuses to load on TypeScript 7 and says it is tracking support for 7.1, and the `eslint-plugin-react` that `eslint-config-next` depends on calls `context.getFilename()`, which ESLint 10 removed. When either lands upstream, delete the matching entry in `.github/dependabot.yml`.
+
 CI does not check that `api.d.ts` matches the backend — that would need Spring Boot and MySQL inside the workflow — so regenerate it by hand after backend DTO changes.
 
 ## Layout

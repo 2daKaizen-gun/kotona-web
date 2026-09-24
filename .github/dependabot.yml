@@ -16,6 +16,19 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # 아래 둘은 우리 코드가 아니라 생태계가 막고 있다. 그대로 두면 매주 같은 빨간 PR 이
+      # 다시 열리고, 그게 반복되면 Dependabot PR 전체를 안 보게 된다.
+      #
+      # TypeScript 7: typescript-eslint 가 로드 자체를 거부한다 —
+      # "typescript-eslint does not support TS 7.0 … tracking support for TS >=7.1"
+      # (typescript-eslint#10940). 지원되면 이 줄을 지우고 올린다.
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
+      # ESLint 10: eslint-config-next 가 끌어오는 eslint-plugin-react 가
+      # ESLint 10 에서 없어진 context.getFilename() 을 부른다. 최신 7.37.5 도 마찬가지다.
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
     commit-message:
       prefix: chore
 
