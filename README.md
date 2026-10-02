@@ -116,7 +116,7 @@ npm ci
 npm run typecheck    # next typegen && tsc --noEmit
 npm run lint
 npm run build
-npm test             # 138 unit tests — Vitest + Testing Library
+npm test             # 142 unit tests — Vitest + Testing Library
 npm run test:coverage  # the same, with coverage and its floor
 npm run test:e2e     # 12 browser tests — Playwright, Chromium
 ```
