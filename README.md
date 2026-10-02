@@ -88,6 +88,12 @@ The backend derives that spec from its `NuanceResponseDTO` record tree, so a fie
 
 The generator is run through `npx` at a version pinned in the `gen:types` script rather than installed. Nothing imports it — it writes a file and exits — and as a dependency it declares `typescript: ^5.x`, which held the whole repository's TypeScript back.
 
+## What the score means
+
+The number on the result card is a model's judgement with a rule layer over it, not a measurement. The card now says so in place: expanding **이 점수가 나온 과정** lists every adjustment the rules made — the metric, the value before and after, and why — and notes that those rules only recognise a fixed list of expressions.
+
+The basis for all of it, including what has not been validated, is in [kotona-analyzer's README](https://github.com/2daKaizen-gun/kotona-analyzer#-what-the-score-is).
+
 ## The 25-second wait
 
 Analysis usually takes 20–30 seconds, but the tail is long — 79 seconds is the slowest run observed. Most of the cost is output token generation: three smart replies plus two alternatives, written in Japanese and Korean.

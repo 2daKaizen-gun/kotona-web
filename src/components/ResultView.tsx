@@ -62,6 +62,10 @@ export default function ResultView({
           <MetricBar label="에티켓 (쿠션어)" value={result.metrics?.etiquette ?? 0} max={METRIC_MAX.etiquette} />
         </div>
 
+        {result.scoreAdjustments && result.scoreAdjustments.length > 0 && (
+          <ScoreAdjustments adjustments={result.scoreAdjustments} />
+        )}
+
         {result.evaluation?.summary && (
           <p className="mt-6 border-t border-black/10 pt-4 text-sm leading-relaxed dark:border-white/15">
             {result.evaluation.summary}
@@ -150,6 +154,50 @@ export default function ResultView({
         </section>
       )}
     </div>
+  );
+}
+
+const ADJUSTED_LABELS: Record<string, string> = {
+  politeness: "정중도",
+  indirectness: "간접성",
+  etiquette: "에티켓",
+  riskLevel: "리스크",
+};
+
+/**
+ * 규칙이 모델 점수를 고친 내역.
+ *
+ * 점수만 보여 주던 동안에는 73점이 모델의 판단인지 우리 규칙이 깎은 결과인지 알 수 없었다.
+ * 규칙이 틀릴 수 있는 쪽이고 실제로 틀린 적도 있으므로, 고친 것은 고쳤다고 적는다.
+ */
+function ScoreAdjustments({
+  adjustments,
+}: {
+  adjustments: NonNullable<NuanceResponse["scoreAdjustments"]>;
+}) {
+  return (
+    <details className="mt-6 border-t border-black/10 pt-4 dark:border-white/15">
+      <summary className="cursor-pointer text-xs opacity-60 transition hover:opacity-100">
+        이 점수가 나온 과정 ({adjustments.length}건 조정됨)
+      </summary>
+      <ul className="mt-3 space-y-2">
+        {adjustments.map((adjustment, index) => (
+          <li key={index} className="text-xs leading-relaxed">
+            <span className="font-medium">
+              {ADJUSTED_LABELS[adjustment.metric ?? ""] ?? adjustment.metric}
+            </span>{" "}
+            <span className="tabular-nums opacity-60">
+              {adjustment.before} → {adjustment.after}
+            </span>
+            <span className="block opacity-70">{adjustment.reason}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs opacity-50">
+        AI 가 매긴 점수를 사전 기반 규칙이 다시 확인한 결과입니다. 규칙이 보는 표현은 한정돼 있어
+        완전하지 않습니다.
+      </p>
+    </details>
   );
 }
 
