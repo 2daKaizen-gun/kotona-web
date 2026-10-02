@@ -210,12 +210,19 @@ export interface components {
             suggestions?: components["schemas"]["SuggestionDTO"][];
             sentiment?: components["schemas"]["SentimentDTO"];
             riskAnalysis?: components["schemas"]["RiskAnalysisDTO"];
+            scoreAdjustments?: components["schemas"]["ScoreAdjustmentDTO"][];
             smartReplies?: components["schemas"]["SmartReplyDTO"][];
         };
         RiskAnalysisDTO: {
             riskLevel?: string;
             redFlags?: string[];
             copingStrategy?: string;
+        };
+        ScoreAdjustmentDTO: {
+            metric?: string;
+            before?: string;
+            after?: string;
+            reason?: string;
         };
         SentimentDTO: {
             polarity?: string;

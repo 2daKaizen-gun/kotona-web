@@ -116,4 +116,47 @@ describe("ResultView", () => {
       expect(screen.getByText(String(full.smartReplies?.[0]?.content))).toBeInTheDocument();
     });
   });
+
+  describe("점수가 나온 과정", () => {
+    const adjusted = {
+      ...full,
+      scoreAdjustments: [
+        { metric: "etiquette", before: "25", after: "15", reason: "쿠션어가 쓰이지 않아 감점했습니다." },
+        { metric: "riskLevel", before: "SAFE", after: "DANGER", reason: "거절 신호를 찾았습니다: '어렵다(難しい)' 시그널 감지" },
+      ],
+    };
+
+    it("규칙이 고친 내역을 항목·전후·이유와 함께 보여 준다", async () => {
+      // 73 점이 모델의 판단인지 규칙이 깎은 결과인지 구분할 수 없던 자리다
+      render(<ResultView result={adjusted} />);
+
+      await userEvent.click(screen.getByText(/이 점수가 나온 과정/));
+
+      expect(screen.getByText("에티켓")).toBeInTheDocument();
+      expect(screen.getByText("25 → 15")).toBeInTheDocument();
+      expect(screen.getByText(/쿠션어가 쓰이지 않아/)).toBeInTheDocument();
+      expect(screen.getByText("SAFE → DANGER")).toBeInTheDocument();
+    });
+
+    it("몇 건이 조정됐는지 펼치기 전에 알려 준다", () => {
+      render(<ResultView result={adjusted} />);
+
+      expect(screen.getByText(/2건 조정됨/)).toBeInTheDocument();
+    });
+
+    it("규칙이 손대지 않았으면 이 영역을 아예 보여 주지 않는다", () => {
+      // 조정이 없는데 "조정 0건" 을 띄우면 읽을 것도 없는 접힘만 늘어난다
+      render(<ResultView result={{ ...full, scoreAdjustments: [] }} />);
+
+      expect(screen.queryByText(/이 점수가 나온 과정/)).not.toBeInTheDocument();
+    });
+
+    it("규칙이 보는 범위가 한정적이라는 것을 함께 밝힌다", async () => {
+      render(<ResultView result={adjusted} />);
+
+      await userEvent.click(screen.getByText(/이 점수가 나온 과정/));
+
+      expect(screen.getByText(/완전하지 않습니다/)).toBeInTheDocument();
+    });
+  });
 });
