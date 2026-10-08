@@ -9,6 +9,9 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # 멈춘 작업은 기본 6시간까지 돈다. 이 검사는 평소 1분, 브라우저 테스트까지 2분이므로
+    # 20분이면 느린 날도 덮는다 — 넘겼다면 기다릴 일이 아니라 볼 일이 생긴 것이다.
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
