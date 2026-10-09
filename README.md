@@ -120,6 +120,8 @@ The generator is run through `npx` at a version pinned in the `gen:types` script
 
 The number on the result card is a model's judgement with a rule layer over it, not a measurement. The card now says so in place: expanding **이 점수가 나온 과정** lists every adjustment the rules made — the metric, the value before and after, and why — and notes that those rules only recognise a fixed list of expressions.
 
+The risk grade on the card is the **more severe** of two readings — a rule layer that only knows a fixed list of expressions, and the model. That means the rules' clean record on harmless sentences (no false alarm on any of the 21 safe ones in the labelled set) does not carry over to this card: when the model over-reads a sentence, its warning is what you see. How often that happens is measured — on the 33 sentences answered so far the composed grade matches the label 30 times, and all 3 misses are *more* severe than the label, never less.
+
 The basis for all of it, including what has not been validated, is in [kotona-analyzer's README](https://github.com/2daKaizen-gun/kotona-analyzer#-what-the-score-is), and the whole path from input to this card — normalize, morphology, model, rules, adjustment record, render — is one page: [`docs/SCORE_PATH.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/SCORE_PATH.md).
 
 ## The 25-second wait
