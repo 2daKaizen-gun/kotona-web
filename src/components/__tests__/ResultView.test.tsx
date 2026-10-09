@@ -158,5 +158,16 @@ describe("ResultView", () => {
 
       expect(screen.getByText(/완전하지 않습니다/)).toBeInTheDocument();
     });
+
+    // 규칙의 오경보가 0 건이어도, 등급은 둘 중 더 위험한 쪽이라 AI 가 과하게 읽으면
+    // 그 경고가 화면에 그대로 뜬다. 그 사실을 카드에서 빼면 수치가 실제보다 좋게 읽힌다.
+    it("등급이 둘 중 더 위험한 쪽이라는 것도 밝힌다", async () => {
+      render(<ResultView result={adjusted} />);
+
+      await userEvent.click(screen.getByText(/이 점수가 나온 과정/));
+
+      expect(screen.getByText(/더 위험한 쪽/)).toBeInTheDocument();
+      expect(screen.getByText(/그 경고가 그대로 표시됩니다/)).toBeInTheDocument();
+    });
   });
 });
