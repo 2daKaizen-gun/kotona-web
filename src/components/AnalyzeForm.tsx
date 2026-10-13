@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { NuanceResponse, RelationshipType } from "@/lib/backend";
 import { ANALYZE_TEXT_MAX } from "@/lib/limits";
+import { errorMessage, readJson } from "@/lib/read-json";
 import ResultView from "./ResultView";
 import ProgressIndicator from "./ProgressIndicator";
 
@@ -44,9 +45,10 @@ export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
         body: JSON.stringify({ text, relationshipType }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        setError(data.error ?? "분석에 실패했습니다.");
+      // 본문이 JSON 이 아니어도(플랫폼의 시간 초과 페이지 등) 네트워크 오류가 아니다. 응답은 왔다.
+      const data = await readJson(response);
+      if (!response.ok || data === null) {
+        setError(errorMessage(data, response.status, "분석에 실패했습니다."));
         return;
       }
       setResult(data as NuanceResponse);

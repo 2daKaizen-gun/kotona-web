@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { AnalysisHistorySummary, HistoryPage, NuanceResponse } from "@/lib/backend";
+import { errorMessage, readJson } from "@/lib/read-json";
 import ResultView, { CATEGORY_LABELS, RISK_STYLES } from "./ResultView";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("ko-KR", { dateStyle: "medium", timeStyle: "short" });
@@ -20,9 +21,9 @@ export default function HistoryList() {
   /** 한 페이지를 가져와 뒤에 잇는다. 첫 페이지면 목록을 새로 만든다. */
   const loadPage = useCallback(async (page: number) => {
     const response = await fetch(`/api/history?page=${page}&size=${PAGE_SIZE}`);
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error ?? "이력을 불러오지 못했습니다.");
+    const data = await readJson(response);
+    if (!response.ok || data === null) {
+      throw new Error(errorMessage(data, response.status, "이력을 불러오지 못했습니다."));
     }
 
     const result = data as HistoryPage;

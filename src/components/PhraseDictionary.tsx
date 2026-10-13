@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BusinessPhrase, PhrasePage, PhraseRequest } from "@/lib/backend";
+import { errorMessage, readJson } from "@/lib/read-json";
 import { SITUATION_LABELS, SITUATIONS, type Situation } from "@/lib/situations";
 import PhraseForm from "./PhraseForm";
 
@@ -38,10 +39,10 @@ export default function PhraseDictionary() {
     if (situation !== "ALL") query.set("situation", situation);
 
     const response = await fetch(`/api/phrases?${query}`);
-    const data = await response.json();
+    const data = await readJson(response);
     if (request !== latestRequest.current) return;
-    if (!response.ok) {
-      throw new Error(data.error ?? "사전을 불러오지 못했습니다.");
+    if (!response.ok || data === null) {
+      throw new Error(errorMessage(data, response.status, "사전을 불러오지 못했습니다."));
     }
 
     const result = data as PhrasePage;

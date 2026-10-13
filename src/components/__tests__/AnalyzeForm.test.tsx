@@ -98,6 +98,26 @@ describe("AnalyzeForm", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("분석에 실패했습니다");
   });
 
+  it("JSON 이 아닌 오류 페이지가 와도 네트워크 오류라고 하지 않는다", async () => {
+    // 호스팅 플랫폼이 시간 초과로 자르면 HTML 이 온다. 응답은 온 것이므로 연결 문제가 아니다.
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 504,
+      json: async () => {
+        throw new SyntaxError("Unexpected token '<'");
+      },
+    } as unknown as Response);
+    render(<AnalyzeForm />);
+
+    await userEvent.type(screen.getByLabelText("분석할 일본어 문장"), "検討します");
+    await userEvent.click(screen.getByRole("button", { name: "분석하기" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("분석에 실패했습니다");
+    expect(alert).toHaveTextContent("504");
+    expect(alert).not.toHaveTextContent("네트워크");
+  });
+
   it("네트워크가 끊겨도 화면이 멈추지 않는다", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("offline"));
     render(<AnalyzeForm />);
