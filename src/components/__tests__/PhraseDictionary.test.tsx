@@ -83,6 +83,36 @@ describe("PhraseDictionary", () => {
     expect(await screen.findByText(/쿠션어 1건 중 1건 표시/)).toBeInTheDocument();
   });
 
+  it("필터를 빠르게 바꾸면 늦게 도착한 이전 필터의 답은 버린다", async () => {
+    // 쿠션어 응답을 붙잡아 두고 메일을 누른다. 쿠션어 답이 나중에 도착해도 화면은 메일이어야 한다.
+    // 예전에는 늦게 온 쪽이 이겨서, 칩은 「메일」 인데 목록은 쿠션어였다.
+    let releaseCushion: () => void = () => {};
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const situation = new URL(String(input), "http://localhost").searchParams.get("situation");
+      const rows = situation
+        ? DEMO_PHRASES.filter((phrase) => phrase.situation === situation)
+        : DEMO_PHRASES;
+      if (situation === "CUSHION") {
+        await new Promise<void>((resolve) => {
+          releaseCushion = resolve;
+        });
+      }
+      return { ok: true, status: 200, json: async () => pageOf(rows) } as Response;
+    });
+    render(<PhraseDictionary />);
+    await screen.findByText("承知いたしました");
+
+    await userEvent.click(screen.getByRole("button", { name: "쿠션어" }));
+    await userEvent.click(screen.getByRole("button", { name: "메일" }));
+    expect(await screen.findByText(/메일 1건 중 1건 표시/)).toBeInTheDocument();
+
+    releaseCushion();
+
+    await waitFor(() => expect(screen.queryByText("恐縮でございますが")).not.toBeInTheDocument());
+    expect(screen.getByText("承知いたしました")).toBeInTheDocument();
+    expect(screen.getByText(/메일 1건 중 1건 표시/)).toBeInTheDocument();
+  });
+
   it("해당 상황에 표현이 없으면 그렇다고 말한다", async () => {
     routeFetch();
     render(<PhraseDictionary />);

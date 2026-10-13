@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { BusinessPhrase, PhrasePage, PhraseRequest } from "@/lib/backend";
+import { errorMessage, readJson } from "@/lib/read-json";
 import { SITUATION_LABELS, SITUATIONS, type Situation } from "@/lib/situations";
 import PhraseForm from "./PhraseForm";
 
@@ -24,15 +25,24 @@ export default function PhraseDictionary() {
   // 쓰기가 성공할 때마다 올려서 목록을 다시 받는다. 정렬(정중도 순)을 백엔드에 맡기기 위해서다.
   const [version, setVersion] = useState(0);
 
+  /*
+   * 가장 최근에 보낸 목록 요청의 번호. 응답은 보낸 순서대로 오지 않는다 —
+   * 「쿠션어」 를 누르고 곧바로 「메일」 을 누르면, 늦게 도착한 쿠션어 응답이 메일 목록을 덮어
+   * 칩은 「메일」 인데 쿠션어 표현이 보였다. 더 나중 요청이 있으면 먼저 보낸 요청의 답은 버린다.
+   */
+  const latestRequest = useRef(0);
+
   /** 한 페이지를 가져와 뒤에 잇는다. 첫 페이지면 목록을 새로 만든다. */
   const loadPage = useCallback(async (page: number, situation: Filter) => {
+    const request = ++latestRequest.current;
     const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
     if (situation !== "ALL") query.set("situation", situation);
 
     const response = await fetch(`/api/phrases?${query}`);
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error ?? "사전을 불러오지 못했습니다.");
+    const data = await readJson(response);
+    if (request !== latestRequest.current) return;
+    if (!response.ok || data === null) {
+      throw new Error(errorMessage(data, response.status, "사전을 불러오지 못했습니다."));
     }
 
     const result = data as PhrasePage;
