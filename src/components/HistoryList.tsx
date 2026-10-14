@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import type { AnalysisHistorySummary, HistoryPage, NuanceResponse } from "@/lib/backend";
+import { appendUnique } from "@/lib/append-unique";
 import { errorMessage, readJson } from "@/lib/read-json";
 import ResultView, { CATEGORY_LABELS, RISK_STYLES } from "./ResultView";
 
@@ -13,26 +14,35 @@ const PAGE_SIZE = 20;
 export default function HistoryList() {
   const [items, setItems] = useState<AnalysisHistorySummary[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [nextPage, setNextPage] = useState(0);
+  /*
+   * 서버가 마지막으로 준 행의 id. "더 보기" 는 페이지 번호 대신 이것 다음부터 받는다.
+   * 예전에는 페이지 번호로 받아서, 한 건을 지우고 더 보기를 누르면 한 건을 건너뛰었다 —
+   * 지운 만큼 다음 페이지의 경계가 앞으로 당겨졌기 때문이다. 지우기는 이 값을 건드리지 않는다.
+   */
+  const [cursor, setCursor] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** 한 페이지를 가져와 뒤에 잇는다. 첫 페이지면 목록을 새로 만든다. */
-  const loadPage = useCallback(async (page: number) => {
-    const response = await fetch(`/api/history?page=${page}&size=${PAGE_SIZE}`);
+  /** 첫 페이지면 목록을 새로 만들고, 커서가 있으면 그 뒤를 이어 붙인다. */
+  const loadPage = useCallback(async (before?: number) => {
+    const query = new URLSearchParams({ size: String(PAGE_SIZE) });
+    if (before !== undefined) query.set("before", String(before));
+
+    const response = await fetch(`/api/history?${query}`);
     const data = await readJson(response);
     if (!response.ok || data === null) {
       throw new Error(errorMessage(data, response.status, "이력을 불러오지 못했습니다."));
     }
 
     const result = data as HistoryPage;
-    setItems((current) =>
-      page === 0 ? (result.content ?? []) : [...(current ?? []), ...(result.content ?? [])],
-    );
-    setTotal(result.totalElements ?? 0);
+    const rows = result.content ?? [];
+    setItems((current) => (before === undefined ? rows : appendUnique(current ?? [], rows)));
+    // 커서 뒤의 응답이 주는 건수는 "남은 것" 이다. 전체 건수는 첫 페이지만 안다.
+    if (before === undefined) setTotal(result.totalElements ?? 0);
     setHasMore(result.hasNext ?? false);
-    setNextPage(page + 1);
+    const last = rows.at(-1)?.id;
+    if (last !== undefined) setCursor(last);
   }, []);
 
   useEffect(() => {
@@ -40,7 +50,7 @@ export default function HistoryList() {
 
     (async () => {
       try {
-        await loadPage(0);
+        await loadPage();
       } catch (loadError) {
         if (cancelled) return;
         setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
@@ -57,7 +67,7 @@ export default function HistoryList() {
     setLoadingMore(true);
     setError(null);
     try {
-      await loadPage(nextPage);
+      await loadPage(cursor);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
     } finally {

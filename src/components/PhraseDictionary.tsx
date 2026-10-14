@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { BusinessPhrase, PhrasePage, PhraseRequest } from "@/lib/backend";
+import { appendUnique } from "@/lib/append-unique";
 import { errorMessage, readJson } from "@/lib/read-json";
 import { SITUATION_LABELS, SITUATIONS, type Situation } from "@/lib/situations";
 import PhraseForm from "./PhraseForm";
@@ -47,7 +48,7 @@ export default function PhraseDictionary() {
 
     const result = data as PhrasePage;
     setPhrases((current) =>
-      page === 0 ? (result.content ?? []) : [...(current ?? []), ...(result.content ?? [])],
+      page === 0 ? (result.content ?? []) : appendUnique(current ?? [], result.content ?? []),
     );
     setTotal(result.totalElements ?? 0);
     setHasMore(result.hasNext ?? false);

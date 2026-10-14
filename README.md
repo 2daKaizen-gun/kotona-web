@@ -13,7 +13,7 @@ of this on every push and pull request, and fails below them.
 
 | what | measured | how to check it |
 |---|---|---|
-| Unit tests | **150** passing, 10 files | `npm test` |
+| Unit tests | **169** passing, 11 files | `npm test` |
 | Browser tests | **12** passing in Chromium | `npm run test:e2e` — against a production build in demo mode on port 3100, no backend needed |
 | Coverage | **94.34%** lines, **85.04%** branches, **91.17%** statements | `npm run test:coverage` — thresholds of 90 / 82 / 90 in `vitest.config.mts` |
 | Type errors, tests included | **0** | `npm run typecheck` — `next typegen && tsc --noEmit` |
@@ -147,7 +147,7 @@ npm ci
 npm run typecheck    # next typegen && tsc --noEmit
 npm run lint
 npm run build
-npm test             # 150 unit tests — Vitest + Testing Library
+npm test             # 169 unit tests — Vitest + Testing Library
 npm run test:coverage  # the same, with coverage and its floor
 npm run test:e2e     # 12 browser tests — Playwright, Chromium
 ```

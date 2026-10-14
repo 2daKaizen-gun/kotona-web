@@ -228,6 +228,24 @@ describe("GET /api/history", () => {
 
     expect(lastCall().url).toBe(`${BASE}/api/history?page=0&size=20`);
   });
+
+  it("커서(before)를 백엔드로 넘긴다", async () => {
+    const { GET } = await import("@/app/api/history/route");
+    backendAnswers({ content: [] });
+
+    await GET(new Request("http://x/api/history?size=20&before=41"));
+
+    expect(lastCall().url).toBe(`${BASE}/api/history?page=0&size=20&before=41`);
+  });
+
+  it("id 가 아닌 커서는 백엔드까지 가지 않고 400", async () => {
+    const { GET } = await import("@/app/api/history/route");
+
+    const response = await GET(new Request("http://x/api/history?before=abc"));
+
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("/api/history/[id]", () => {
