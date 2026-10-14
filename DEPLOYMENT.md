@@ -40,9 +40,13 @@ variables only:
 
 1. Set `KOTONA_API_URL` to the backend's public URL.
 2. Set `KOTONA_API_KEY` to match the backend's `API_KEY`.
-3. Remove `KOTONA_DEMO` (or set it to anything other than `true`).
-4. Set `CORS_ALLOWED_ORIGINS` on the backend to the Vercel domain.
-5. Redeploy — required, because of the build-time read above.
+3. Set `KOTONA_SITE_PASSWORD`. The route handlers attach the key to every call
+   they forward, whoever made it — without a password in front of them, the key
+   protects nothing. Visitors get the browser's own sign-in prompt; the user name
+   is ignored.
+4. Remove `KOTONA_DEMO` (or set it to anything other than `true`).
+5. Set `CORS_ALLOWED_ORIGINS` on the backend to the Vercel domain.
+6. Redeploy — required, because of the build-time read above.
 
 No code changes. Demo mode is an explicit flag rather than an automatic fallback
 precisely so this switch is deliberate: a backend that goes down in production

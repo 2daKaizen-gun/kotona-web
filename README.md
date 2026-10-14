@@ -57,6 +57,7 @@ Node 24 is pinned in `.nvmrc` (`nvm use` / `fnm use` pick it up); Next.js 16 nee
 | `KOTONA_API_URL` | `http://localhost:8081` | Backend base URL |
 | `KOTONA_API_KEY` | *(empty)* | Only needed if the backend sets `API_KEY` |
 | `KOTONA_DEMO` | *(empty)* | `true` serves prepared samples instead of calling the backend |
+| `KOTONA_SITE_PASSWORD` | *(empty)* | When set, every page and `/api/*` route asks for this password (HTTP Basic, any user name). Set it whenever `KOTONA_API_KEY` is set on a public deployment — the route handlers add the key for whoever calls them, so without a password a public frontend is a public backend |
 
 ## Pages
 
