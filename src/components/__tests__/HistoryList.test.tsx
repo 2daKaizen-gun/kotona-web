@@ -234,4 +234,58 @@ describe("HistoryList", () => {
 
     expect(await screen.findByRole("button", { name: "더 보기" })).toBeInTheDocument();
   });
+
+  it("한 건을 지운 뒤 더 보기를 눌러도 건너뛰는 행이 없다", async () => {
+    // 페이지 번호로 받던 때: 첫 페이지 [3, 2] 에서 3 을 지우면 서버 쪽 1 페이지는 1 부터가 아니라
+    // 그다음부터 시작해, 1 이 영영 보이지 않았다. 마지막으로 받은 id 다음부터 받으면 밀리지 않는다.
+    const [newest, middle, oldest] = DEMO_HISTORY_SUMMARIES;
+    const requested: string[] = [];
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      requested.push(url);
+      if (init?.method === "DELETE") {
+        return { ok: true, status: 204, json: async () => ({}) } as Response;
+      }
+      const before = new URL(url, "http://localhost").searchParams.get("before");
+      const content = before === null ? [newest, middle] : [oldest];
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ content, page: 0, size: 2, totalElements: before === null ? 3 : 1, totalPages: 2, hasNext: before === null }),
+      } as Response;
+    });
+    render(<HistoryList />);
+    await screen.findByText(newest.userInput!);
+
+    await userEvent.click(screen.getAllByRole("button", { name: "삭제" })[0]);
+    await userEvent.click(screen.getByRole("button", { name: "삭제 확인" }));
+    await waitFor(() => expect(screen.queryByText(newest.userInput!)).not.toBeInTheDocument());
+    await userEvent.click(screen.getByRole("button", { name: "더 보기" }));
+
+    expect(await screen.findByText(oldest.userInput!)).toBeInTheDocument();
+    expect(requested.at(-1)).toContain(`before=${middle.id}`);
+    expect(requested.at(-1)).not.toContain("page=");
+    // 전체 건수는 첫 페이지가 준 3 에서 지운 1 을 뺀 값이다. 커서 뒤 응답의 "남은 1건" 으로 덮지 않는다.
+    expect(screen.getByText(/전체 2건 중 2건 표시/)).toBeInTheDocument();
+  });
+
+  it("이미 보이는 행이 다음 응답에 다시 와도 한 번만 보여 준다", async () => {
+    const [newest, middle, oldest] = DEMO_HISTORY_SUMMARIES;
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const before = new URL(String(input), "http://localhost").searchParams.get("before");
+      const content = before === null ? [newest, middle] : [middle, oldest];
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ content, page: 0, size: 2, totalElements: 3, totalPages: 2, hasNext: before === null }),
+      } as Response;
+    });
+    render(<HistoryList />);
+    await screen.findByText(newest.userInput!);
+
+    await userEvent.click(screen.getByRole("button", { name: "더 보기" }));
+
+    await screen.findByText(oldest.userInput!);
+    expect(screen.getAllByText(middle.userInput!)).toHaveLength(1);
+  });
 });

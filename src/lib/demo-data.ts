@@ -323,20 +323,27 @@ export const DEMO_HISTORY_SUMMARIES: AnalysisHistorySummary[] = DEMO_HISTORY.map
   }),
 );
 
-/** 예시 이력을 페이지로 잘라 준다. 백엔드의 PageResponse 와 같은 모양이어야 한다. */
-export function demoHistoryPage(page: number, size: number): HistoryPage {
+/**
+ * 예시 이력을 페이지로 잘라 준다. 백엔드의 PageResponse 와 같은 모양이어야 한다.
+ * `before` 가 오면 백엔드처럼 그 id 보다 작은 행만 남기고, page 는 무시한다.
+ */
+export function demoHistoryPage(page: number, size: number, before?: number): HistoryPage {
   const safeSize = Math.min(100, Math.max(1, size));
-  const safePage = Math.max(0, page);
+  const rows =
+    before === undefined
+      ? DEMO_HISTORY_SUMMARIES
+      : DEMO_HISTORY_SUMMARIES.filter((row) => (row.id ?? 0) < before);
+  const safePage = before === undefined ? Math.max(0, page) : 0;
   const start = safePage * safeSize;
-  const content = DEMO_HISTORY_SUMMARIES.slice(start, start + safeSize);
+  const content = rows.slice(start, start + safeSize);
 
   return {
     content,
     page: safePage,
     size: safeSize,
-    totalElements: DEMO_HISTORY_SUMMARIES.length,
-    totalPages: Math.ceil(DEMO_HISTORY_SUMMARIES.length / safeSize),
-    hasNext: start + safeSize < DEMO_HISTORY_SUMMARIES.length,
+    totalElements: rows.length,
+    totalPages: Math.ceil(rows.length / safeSize),
+    hasNext: start + safeSize < rows.length,
   };
 }
 

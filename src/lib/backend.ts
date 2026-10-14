@@ -60,12 +60,14 @@ type FetchOptions = {
   body?: unknown;
   /** 분석은 25초 이상 걸린다. 기본 타임아웃으로는 부족하다. */
   timeoutMs?: number;
+  /** 요청한 사용자의 IP. 백엔드가 분당 제한을 사람마다 세도록 X-Forwarded-For 로 넘긴다. */
+  clientIp?: string;
 };
 
 async function callBackend<T>(path: string, options: FetchOptions = {}): Promise<T> {
   // 분석은 꼬리가 길다(관측 최대 79초). route handler 의 maxDuration(120초) 안에 머무르되
   // 그보다 먼저 끊어, 프레임워크가 자르기 전에 우리 문구로 안내한다.
-  const { method = "GET", body, timeoutMs = 110_000 } = options;
+  const { method = "GET", body, timeoutMs = 110_000, clientIp } = options;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -77,6 +79,7 @@ async function callBackend<T>(path: string, options: FetchOptions = {}): Promise
         "Content-Type": "application/json",
         // 키가 설정된 경우에만 붙인다. 로컬 백엔드는 API_KEY 미설정이라 없어도 통과한다.
         ...(API_KEY ? { "X-API-KEY": API_KEY } : {}),
+        ...(clientIp ? { "X-Forwarded-For": clientIp } : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
@@ -133,25 +136,29 @@ function demoWriteRefused<T>(): Promise<T> {
   );
 }
 
-export function analyze(text: string, relationshipType: RelationshipType) {
+export function analyze(text: string, relationshipType: RelationshipType, clientIp?: string) {
   if (DEMO_MODE) {
     return Promise.resolve(pickDemoAnalysis(text));
   }
   return callBackend<NuanceResponse>("/analyze", {
     method: "POST",
     body: { text, relationshipType },
+    clientIp,
   });
 }
 
 /**
  * 이력 목록. 요약만 담기므로 저장된 분석 결과 전체는 여기 없다 —
  * 한 건을 펼칠 때 getHistoryDetail 로 그 행만 가져온다.
+ *
+ * <p>`before` 가 있으면 그 id 보다 오래된 것부터 — "더 보기" 는 페이지 번호가 아니라 이것을 쓴다.
  */
-export function getHistory(page = 0, size = 20) {
+export function getHistory(page = 0, size = 20, before?: number) {
   if (DEMO_MODE) {
-    return Promise.resolve(demoHistoryPage(page, size));
+    return Promise.resolve(demoHistoryPage(page, size, before));
   }
   const query = new URLSearchParams({ page: String(page), size: String(size) });
+  if (before !== undefined) query.set("before", String(before));
   return callBackend<HistoryPage>(`/api/history?${query}`, { timeoutMs: 15_000 });
 }
 

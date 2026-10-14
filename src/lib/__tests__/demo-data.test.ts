@@ -117,6 +117,19 @@ describe("이력 페이지 자르기", () => {
     expect(demoHistoryPage(0, 100).hasNext).toBe(false);
   });
 
+  it("커서가 오면 백엔드처럼 그 id 보다 오래된 행만 준다", () => {
+    // 예시 모드에서 "더 보기" 가 백엔드와 다르게 굴면, 배포된 화면만 다르게 동작한다
+    const first = demoHistoryPage(0, 1);
+    const cursor = first.content!.at(-1)!.id!;
+
+    const next = demoHistoryPage(7, 1, cursor);
+
+    expect(next.page).toBe(0);
+    expect(next.content!.map((row) => row.id)).toEqual([cursor - 1]);
+    expect(next.content!.every((row) => row.id! < cursor)).toBe(true);
+    expect(demoHistoryPage(0, 20, 1).content).toEqual([]);
+  });
+
   it("백엔드와 같은 상한·하한을 적용한다", () => {
     // 백엔드는 size 를 1~100 으로 조인다. 예시가 다르게 굴면 화면 동작이 갈린다.
     expect(demoHistoryPage(0, 9999).size).toBe(100);
