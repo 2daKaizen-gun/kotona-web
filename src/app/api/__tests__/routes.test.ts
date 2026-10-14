@@ -67,6 +67,31 @@ describe("POST /api/analyze", () => {
     });
   });
 
+  it("사용자의 IP 를 X-Forwarded-For 로 넘긴다 — 백엔드가 사람마다 세도록", async () => {
+    // 넘기지 않으면 모든 요청이 이 서버의 주소로 보여, 사용자 전원이 분당 20 회를 나눠 쓴다
+    const { POST } = await import("@/app/api/analyze/route");
+    backendAnswers({ totalScore: 73 });
+    const request = post("http://x/api/analyze", { text: "ご確認" });
+    request.headers.set("x-forwarded-for", "203.0.113.7, 10.0.0.5");
+
+    await POST(request);
+
+    expect(lastCall().headers.get("X-Forwarded-For")).toBe("203.0.113.7");
+  });
+
+  it("플랫폼이 x-real-ip 만 줄 때도 넘기고, 아무것도 없으면 헤더를 만들지 않는다", async () => {
+    const { POST } = await import("@/app/api/analyze/route");
+    backendAnswers({ totalScore: 73 });
+
+    const withRealIp = post("http://x/api/analyze", { text: "ご確認" });
+    withRealIp.headers.set("x-real-ip", "198.51.100.4");
+    await POST(withRealIp);
+    expect(lastCall().headers.get("X-Forwarded-For")).toBe("198.51.100.4");
+
+    await POST(post("http://x/api/analyze", { text: "ご確認" }));
+    expect(lastCall().headers.has("X-Forwarded-For")).toBe(false);
+  });
+
   it("관계를 비워 두면 사내로 보낸다", async () => {
     const { POST } = await import("@/app/api/analyze/route");
     backendAnswers({ totalScore: 50 });

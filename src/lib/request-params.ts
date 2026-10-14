@@ -19,3 +19,18 @@ export function toId(raw: string): number | null {
   const id = Number(raw);
   return Number.isInteger(id) && id > 0 ? id : null;
 }
+
+/**
+ * 요청한 사용자의 IP. 플랫폼이 붙인 `x-forwarded-for` 의 첫 주소, 없으면 `x-real-ip`.
+ *
+ * <p>백엔드의 분당 제한은 IP 마다 센다. 이 값을 넘기지 않으면 모든 요청이 이 서버 하나의 주소로
+ * 보여서, 사용자 전원이 한 버킷을 나눠 쓴다. 백엔드는 이 헤더를 API 키가 맞은 호출에서만 믿는다.
+ *
+ * <p>이 헤더를 믿을 수 있는 것은 앞단이 덮어쓰기 때문이다 — Vercel 은 클라이언트가 보낸 값을
+ * 버리고 자기가 본 주소를 쓴다. 덮어쓰지 않는 프록시 뒤에 직접 띄우면 사용자가 자기 버킷을 고를 수
+ * 있지만, 그 사용자는 이미 사이트 비밀번호를 통과한 사람이다.
+ */
+export function clientIpOf(request: Request): string | undefined {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  return forwarded || request.headers.get("x-real-ip")?.trim() || undefined;
+}

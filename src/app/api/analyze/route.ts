@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { analyze, BackendError, isRelationshipType, RELATIONSHIP_TYPES } from "@/lib/backend";
 import { ANALYZE_TEXT_MAX } from "@/lib/limits";
+import { clientIpOf } from "@/lib/request-params";
 
 /** 백엔드 분석은 25초 안팎이라 기본 실행시간으로는 모자란다. */
 export const maxDuration = 120;
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
   const relationshipType = given ? "INTERNAL" : raw;
 
   try {
-    return NextResponse.json(await analyze(text, relationshipType));
+    // 사용자 IP 를 함께 넘긴다. 넘기지 않으면 백엔드는 모든 사용자를 이 서버 하나로 센다.
+    return NextResponse.json(await analyze(text, relationshipType, clientIpOf(request)));
   } catch (error) {
     return toErrorResponse(error);
   }

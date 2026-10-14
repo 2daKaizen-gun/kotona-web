@@ -60,12 +60,14 @@ type FetchOptions = {
   body?: unknown;
   /** 분석은 25초 이상 걸린다. 기본 타임아웃으로는 부족하다. */
   timeoutMs?: number;
+  /** 요청한 사용자의 IP. 백엔드가 분당 제한을 사람마다 세도록 X-Forwarded-For 로 넘긴다. */
+  clientIp?: string;
 };
 
 async function callBackend<T>(path: string, options: FetchOptions = {}): Promise<T> {
   // 분석은 꼬리가 길다(관측 최대 79초). route handler 의 maxDuration(120초) 안에 머무르되
   // 그보다 먼저 끊어, 프레임워크가 자르기 전에 우리 문구로 안내한다.
-  const { method = "GET", body, timeoutMs = 110_000 } = options;
+  const { method = "GET", body, timeoutMs = 110_000, clientIp } = options;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -77,6 +79,7 @@ async function callBackend<T>(path: string, options: FetchOptions = {}): Promise
         "Content-Type": "application/json",
         // 키가 설정된 경우에만 붙인다. 로컬 백엔드는 API_KEY 미설정이라 없어도 통과한다.
         ...(API_KEY ? { "X-API-KEY": API_KEY } : {}),
+        ...(clientIp ? { "X-Forwarded-For": clientIp } : {}),
       },
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
@@ -133,13 +136,14 @@ function demoWriteRefused<T>(): Promise<T> {
   );
 }
 
-export function analyze(text: string, relationshipType: RelationshipType) {
+export function analyze(text: string, relationshipType: RelationshipType, clientIp?: string) {
   if (DEMO_MODE) {
     return Promise.resolve(pickDemoAnalysis(text));
   }
   return callBackend<NuanceResponse>("/analyze", {
     method: "POST",
     body: { text, relationshipType },
+    clientIp,
   });
 }
 
