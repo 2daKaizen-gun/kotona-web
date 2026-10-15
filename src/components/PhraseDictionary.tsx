@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { BusinessPhrase, PhrasePage, PhraseRequest } from "@/lib/backend";
+import type { BusinessPhrase, PhraseCursor, PhrasePage, PhraseRequest } from "@/lib/backend";
 import { appendUnique } from "@/lib/append-unique";
 import { errorMessage, readJson } from "@/lib/read-json";
 import { SITUATION_LABELS, SITUATIONS, type Situation } from "@/lib/situations";
@@ -17,7 +17,11 @@ type Editing = null | "new" | number;
 export default function PhraseDictionary() {
   const [phrases, setPhrases] = useState<BusinessPhrase[] | null>(null);
   const [total, setTotal] = useState(0);
-  const [nextPage, setNextPage] = useState(0);
+  /*
+   * 서버가 마지막으로 준 행의 (id, 정중도). "더 보기" 는 페이지 번호 대신 이것 다음부터 받는다 —
+   * 페이지 번호로 받으면 앞쪽 행이 지워지거나 끼어들 때 경계가 밀려 한 건을 건너뛴다.
+   */
+  const [cursor, setCursor] = useState<PhraseCursor | undefined>(undefined);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +37,15 @@ export default function PhraseDictionary() {
    */
   const latestRequest = useRef(0);
 
-  /** 한 페이지를 가져와 뒤에 잇는다. 첫 페이지면 목록을 새로 만든다. */
-  const loadPage = useCallback(async (page: number, situation: Filter) => {
+  /** 첫 페이지면 목록을 새로 만들고, 커서가 있으면 그 뒤를 이어 붙인다. */
+  const loadPage = useCallback(async (situation: Filter, after?: PhraseCursor) => {
     const request = ++latestRequest.current;
-    const query = new URLSearchParams({ page: String(page), size: String(PAGE_SIZE) });
+    const query = new URLSearchParams({ size: String(PAGE_SIZE) });
     if (situation !== "ALL") query.set("situation", situation);
+    if (after) {
+      query.set("afterId", String(after.afterId));
+      if (after.afterLevel !== undefined) query.set("afterLevel", String(after.afterLevel));
+    }
 
     const response = await fetch(`/api/phrases?${query}`);
     const data = await readJson(response);
@@ -47,12 +55,15 @@ export default function PhraseDictionary() {
     }
 
     const result = data as PhrasePage;
-    setPhrases((current) =>
-      page === 0 ? (result.content ?? []) : appendUnique(current ?? [], result.content ?? []),
-    );
-    setTotal(result.totalElements ?? 0);
+    const rows = result.content ?? [];
+    setPhrases((current) => (after ? appendUnique(current ?? [], rows) : rows));
+    // 커서 뒤의 응답이 주는 건수는 "남은 것" 이다. 전체 건수는 첫 페이지만 안다.
+    if (!after) setTotal(result.totalElements ?? 0);
     setHasMore(result.hasNext ?? false);
-    setNextPage(page + 1);
+    const last = rows.at(-1);
+    if (last?.id !== undefined) {
+      setCursor({ afterId: last.id, afterLevel: last.politenessLevel ?? undefined });
+    }
   }, []);
 
   // 필터가 바뀌면 서버에 다시 묻는다. 예전에는 전체를 받아 화면에서 걸렀지만,
@@ -62,7 +73,7 @@ export default function PhraseDictionary() {
 
     (async () => {
       try {
-        await loadPage(0, filter);
+        await loadPage(filter);
       } catch (loadError) {
         if (cancelled) return;
         setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
@@ -79,7 +90,7 @@ export default function PhraseDictionary() {
     setLoadingMore(true);
     setError(null);
     try {
-      await loadPage(nextPage, filter);
+      await loadPage(filter, cursor);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "네트워크 오류가 발생했습니다.");
     } finally {
