@@ -37,7 +37,7 @@ export interface paths {
         };
         /**
          * 숙어 목록
-         * @description 정중도 높은 순으로 한 페이지. 사용자가 추가한 표현까지 포함한다.
+         * @description 정중도 높은 순으로 한 페이지. 사용자가 추가한 표현까지 포함한다. afterId 를 주면 그 행 다음부터 준다(이때 page 는 무시하고, totalElements 는 커서 뒤에 남은 건수다). 정렬은 정중도 내림차순(없는 행은 맨 뒤), id 오름차순.
          */
         get: operations["getAllPhrases"];
         put?: never;
@@ -81,7 +81,7 @@ export interface paths {
         };
         /**
          * 상황별 숙어 검색
-         * @description EMAIL, MEETING 등 특정 상황에 맞는 숙어만 필터링. 허용되지 않은 값이면 400
+         * @description EMAIL, MEETING 등 특정 상황에 맞는 숙어만 필터링. 허용되지 않은 값이면 400. afterId 를 주면 그 행 다음부터 준다(이때 page 는 무시하고, totalElements 는 커서 뒤에 남은 건수다). 정렬은 정중도 내림차순(없는 행은 맨 뒤), id 오름차순.
          */
         get: operations["getPhrasesBySituation"];
         put?: never;
@@ -349,6 +349,10 @@ export interface operations {
                 page?: number;
                 /** @description 페이지 크기 (최대 100) */
                 size?: number;
+                /** @description 마지막으로 받은 행의 id. "더 보기" 는 이것을 쓴다 */
+                afterId?: number;
+                /** @description 마지막으로 받은 행의 정중도. 그 행에 정중도가 없었으면 비운다 */
+                afterLevel?: number;
             };
             header?: never;
             path?: never;
@@ -424,6 +428,10 @@ export interface operations {
                 page?: number;
                 /** @description 페이지 크기 (최대 100) */
                 size?: number;
+                /** @description 마지막으로 받은 행의 id. "더 보기" 는 이것을 쓴다 */
+                afterId?: number;
+                /** @description 마지막으로 받은 행의 정중도. 그 행에 정중도가 없었으면 비운다 */
+                afterLevel?: number;
             };
             header?: never;
             path?: never;

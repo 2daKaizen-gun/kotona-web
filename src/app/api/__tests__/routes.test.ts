@@ -312,6 +312,29 @@ describe("/api/phrases", () => {
     expect(lastCall().url).toBe(`${BASE}/api/phrases?page=0&size=20`);
   });
 
+  it("커서를 백엔드로 넘긴다 — 정중도가 없던 행이면 afterLevel 없이", async () => {
+    const { GET } = await import("@/app/api/phrases/route");
+    backendAnswers({ content: [] });
+
+    await GET(new Request("http://x/api/phrases?situation=EMAIL&afterId=7&afterLevel=4"));
+    expect(lastCall().url).toBe(`${BASE}/api/phrases/search?situation=EMAIL&page=0&size=20&afterId=7&afterLevel=4`);
+
+    await GET(new Request("http://x/api/phrases?afterId=36"));
+    expect(lastCall().url).toBe(`${BASE}/api/phrases?page=0&size=20&afterId=36`);
+  });
+
+  it.each(["afterId=abc", "afterLevel=3", "afterId=7&afterLevel=9", "afterId=7&afterLevel=x"])(
+    "형식이 틀린 커서(%s)는 백엔드까지 가지 않고 400",
+    async (query) => {
+      const { GET } = await import("@/app/api/phrases/route");
+
+      const response = await GET(new Request(`http://x/api/phrases?${query}`));
+
+      expect(response.status).toBe(400);
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
   it("추가는 201 로 답한다", async () => {
     const { POST } = await import("@/app/api/phrases/route");
     backendAnswers({ id: 9, phrase: "ご査収ください" }, 201);

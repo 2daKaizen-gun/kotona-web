@@ -204,6 +204,23 @@ describe("숙어 페이지 자르기", () => {
     expect(first.filter((id) => second.includes(id))).toHaveLength(0);
   });
 
+  it("커서로 끝까지 걸으면 페이지로 받은 순서와 같다 — 백엔드와 같은 규칙", () => {
+    // 예시 모드에서 "더 보기" 가 백엔드와 다르게 굴면, 배포된 화면만 다르게 동작한다
+    const all = demoPhrasePage(undefined, 0, 100).content!.map((row) => row.id);
+    const walked: (number | undefined)[] = [];
+    let cursor: { afterId: number; afterLevel?: number } | undefined;
+    for (let step = 0; step < 20; step++) {
+      const page = demoPhrasePage(undefined, 0, 1, cursor);
+      const row = page.content![0];
+      if (!row) break;
+      walked.push(row.id);
+      if (!page.hasNext) break;
+      cursor = { afterId: row.id!, afterLevel: row.politenessLevel ?? undefined };
+    }
+
+    expect(walked).toEqual(all);
+  });
+
   it("이력 목록과 같은 상한·하한을 적용한다", () => {
     expect(demoPhrasePage(undefined, 0, 9999).size).toBe(100);
     expect(demoPhrasePage(undefined, 0, 0).size).toBe(1);

@@ -176,13 +176,16 @@ describe("PhraseDictionary", () => {
 
   it("더 보기를 누르면 다음 페이지를 이어 붙인다", async () => {
     // 이어 붙이지 않고 갈아 끼우면, 누를 때마다 앞의 표현들이 사라진다
+    const requested: URLSearchParams[] = [];
     vi.mocked(fetch).mockImplementation(async (input) => {
-      const page = new URL(String(input), "http://localhost").searchParams.get("page");
-      const rows = page === "0" ? [DEMO_PHRASES[0]] : [DEMO_PHRASES[1]];
+      const params = new URL(String(input), "http://localhost").searchParams;
+      requested.push(params);
+      const first = !params.has("afterId");
+      const rows = first ? [DEMO_PHRASES[0]] : [DEMO_PHRASES[1]];
       return {
         ok: true,
         status: 200,
-        json: async () => ({ ...pageOf(rows), totalElements: 2, hasNext: page === "0" }),
+        json: async () => ({ ...pageOf(rows), totalElements: first ? 2 : 1, hasNext: first }),
       } as Response;
     });
     render(<PhraseDictionary />);
@@ -191,6 +194,10 @@ describe("PhraseDictionary", () => {
     await userEvent.click(screen.getByRole("button", { name: "더 보기" }));
 
     expect(await screen.findByText(DEMO_PHRASES[1].phrase!)).toBeInTheDocument();
+    // 페이지 번호가 아니라 마지막으로 받은 행의 (id, 정중도) 다음부터 묻는다
+    expect(requested.at(-1)?.get("afterId")).toBe(String(DEMO_PHRASES[0].id));
+    expect(requested.at(-1)?.get("afterLevel")).toBe(String(DEMO_PHRASES[0].politenessLevel));
+    expect(requested.at(-1)?.has("page")).toBe(false);
     expect(screen.getByText(DEMO_PHRASES[0].phrase!)).toBeInTheDocument();
     expect(screen.getByText(/2건 중 2건 표시/)).toBeInTheDocument();
     // 마지막 페이지까지 왔으면 버튼은 사라진다

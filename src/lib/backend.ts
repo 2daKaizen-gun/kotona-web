@@ -177,11 +177,21 @@ export function deleteHistory(id: number) {
   return callBackend<void>(`/api/history/${id}`, { method: "DELETE", timeoutMs: 15_000 });
 }
 
-export function getPhrases(situation: string | undefined, page = 0, size = 20) {
+/**
+ * 사전 "더 보기" 의 커서 — 마지막으로 받은 행의 id 와 정중도. 정중도가 없던 행이면 afterLevel 도 없다.
+ * 사전은 정중도 순이라 id 하나로는 이어 받을 수 없다.
+ */
+export type PhraseCursor = { afterId: number; afterLevel?: number };
+
+export function getPhrases(situation: string | undefined, page = 0, size = 20, cursor?: PhraseCursor) {
   if (DEMO_MODE) {
-    return Promise.resolve(demoPhrasePage(situation, page, size));
+    return Promise.resolve(demoPhrasePage(situation, page, size, cursor));
   }
   const query = new URLSearchParams({ page: String(page), size: String(size) });
+  if (cursor) {
+    query.set("afterId", String(cursor.afterId));
+    if (cursor.afterLevel !== undefined) query.set("afterLevel", String(cursor.afterLevel));
+  }
   const path = situation
     ? `/api/phrases/search?situation=${encodeURIComponent(situation)}&${query}`
     : `/api/phrases?${query}`;

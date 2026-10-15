@@ -5,6 +5,7 @@ import type {
   HistoryPage,
   PhrasePage,
   NuanceResponse,
+  PhraseCursor,
 } from "@/lib/backend";
 
 /**
@@ -352,24 +353,38 @@ export function findDemoHistory(id: number): AnalysisHistory | undefined {
 }
 
 /** 예시 숙어를 페이지로 자른다. 백엔드와 같은 정렬(정중도 내림차순, id 오름차순)을 따른다. */
-export function demoPhrasePage(situation: string | undefined, page: number, size: number): PhrasePage {
+export function demoPhrasePage(
+  situation: string | undefined,
+  page: number,
+  size: number,
+  cursor?: PhraseCursor,
+): PhrasePage {
   const matching = situation
     ? DEMO_PHRASES.filter((phrase) => phrase.situation === situation)
     : DEMO_PHRASES;
+  // 정중도 없는 행은 0 으로 보아 맨 뒤로 — 백엔드의 nullsLast 와 같은 순서다(정중도는 1~5).
   const sorted = [...matching].sort(
     (left, right) => (right.politenessLevel ?? 0) - (left.politenessLevel ?? 0) || (left.id ?? 0) - (right.id ?? 0),
   );
+  // 커서가 오면 백엔드처럼 그 행 다음부터. 정렬에서 커서 행 뒤에 오는 것만 남긴다.
+  const rows = cursor
+    ? sorted.filter((phrase) => {
+        const level = phrase.politenessLevel ?? 0;
+        const after = cursor.afterLevel ?? 0;
+        return level < after || (level === after && (phrase.id ?? 0) > cursor.afterId);
+      })
+    : sorted;
 
   const safeSize = Math.min(100, Math.max(1, size));
-  const safePage = Math.max(0, page);
+  const safePage = cursor ? 0 : Math.max(0, page);
   const start = safePage * safeSize;
 
   return {
-    content: sorted.slice(start, start + safeSize),
+    content: rows.slice(start, start + safeSize),
     page: safePage,
     size: safeSize,
-    totalElements: sorted.length,
-    totalPages: Math.ceil(sorted.length / safeSize),
-    hasNext: start + safeSize < sorted.length,
+    totalElements: rows.length,
+    totalPages: Math.ceil(rows.length / safeSize),
+    hasNext: start + safeSize < rows.length,
   };
 }
