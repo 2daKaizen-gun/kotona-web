@@ -1,8 +1,12 @@
 # Deployment
 
 The frontend is deployed on its own. The backend is not hosted — it is a JVM
-service with a MySQL database and requests that run up to 79 seconds, which is a
-paid hosting shape. See [kotona-analyzer#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27).
+service with a MySQL database and requests that run up to 100 seconds. That was
+first read as a paid hosting shape ([kotona-analyzer#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27));
+measured since, it needs about 320 MB and real MySQL 8, which some free tiers
+do hold. The options and a recommendation are in
+[kotona-analyzer `docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md).
+Hosting it is a decision not yet taken, not a cost that rules it out.
 
 So the deployed site runs in **demo mode**: prepared samples, an amber banner on
 every page saying so, and writes refused rather than faked.

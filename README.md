@@ -191,6 +191,7 @@ openapi/            checked-in copy of the backend spec
 
 - [kotona-analyzer](https://github.com/2daKaizen-gun/kotona-analyzer) — Spring Boot backend, analysis engine, Gemini integration
 - Tracking issue: [kotona-analyzer#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27)
+- Hosting the backend for free — measured needs and options: [kotona-analyzer `docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md)
 
 ## License
 
