@@ -3,10 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 import { config, proxy } from "@/proxy";
 
-/**
- * 사이트 앞의 비밀번호. 이것이 없던 동안 공개된 프론트는 곧 공개된 백엔드였다 —
- * route handler 가 누구의 요청에든 API 키를 붙여 백엔드로 넘겼기 때문이다.
- */
+/** 사이트 비밀번호. */
 describe("proxy (사이트 비밀번호)", () => {
   beforeEach(() => {
     delete process.env.KOTONA_SITE_PASSWORD;
@@ -64,13 +61,13 @@ describe("proxy (사이트 비밀번호)", () => {
   });
 
   it("비밀번호에 콜론과 한글이 있어도 읽는다", () => {
-    // Basic 은 첫 콜론에서만 나눈다. 비밀번호 쪽의 콜론까지 자르면 맞는 비밀번호가 거절된다.
+    // 첫 콜론에서만 나눈다. 비밀번호에 콜론이 있어도 된다.
     process.env.KOTONA_SITE_PASSWORD = "가나:다라";
 
     expect(proxy(request("/", basic("u", "가나:다라"))).status).toBe(200);
   });
 
-  it("키는 있는데 비밀번호가 없으면 경고한다 — 공개 배포라면 백엔드가 열려 있다", () => {
+  it("키는 있는데 비밀번호가 없으면 경고한다: 공개 배포라면 백엔드가 열려 있다", () => {
     process.env.KOTONA_API_KEY = "backend-key";
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 

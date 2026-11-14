@@ -26,7 +26,7 @@ export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // 백엔드가 세는 것은 앞뒤 공백을 걷어낸 문장이다. 같은 것을 센다.
+  // 백엔드처럼 앞뒤 공백을 뺀 길이로 센다
   const length = text.trim().length;
   const tooLong = length > ANALYZE_TEXT_MAX;
 
@@ -45,7 +45,7 @@ export default function AnalyzeForm({ demo = false }: { demo?: boolean }) {
         body: JSON.stringify({ text, relationshipType }),
       });
 
-      // 본문이 JSON 이 아니어도(플랫폼의 시간 초과 페이지 등) 네트워크 오류가 아니다. 응답은 왔다.
+      // JSON 이 아니어도(플랫폼 시간 초과 페이지 등) 응답은 온 것이다
       const data = await readJson(response);
       if (!response.ok || data === null) {
         setError(errorMessage(data, response.status, "분석에 실패했습니다."));

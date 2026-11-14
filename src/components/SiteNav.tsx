@@ -19,7 +19,7 @@ export default function SiteNav() {
       </Link>
       <ul className="flex gap-4">
         {LINKS.map((link) => {
-          // "/" 는 모든 경로의 접두사라 정확히 일치할 때만 활성으로 본다.
+          // "/" 는 정확히 일치할 때만 활성
           const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
           return (
             <li key={link.href}>

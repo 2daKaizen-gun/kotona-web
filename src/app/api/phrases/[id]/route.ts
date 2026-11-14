@@ -17,7 +17,7 @@ export async function PUT(request: Request, context: Context) {
     return NextResponse.json({ error: "요청 본문이 올바른 JSON 이 아닙니다." }, { status: 400 });
   }
 
-  // PUT 은 전체 교체다. 빠진 필드는 백엔드에서 비워지므로 화면은 모든 필드를 보내야 한다.
+  // PUT 은 전체 교체라 화면이 모든 필드를 보내야 한다
   try {
     return NextResponse.json(await updatePhrase(id, payload as PhraseRequest));
   } catch (error) {
