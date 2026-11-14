@@ -4,10 +4,7 @@ import userEvent from "@testing-library/user-event";
 import HistoryList from "@/components/HistoryList";
 import { DEMO_HISTORY, DEMO_HISTORY_SUMMARIES } from "@/lib/demo-data";
 
-/**
- * 이력 화면은 목록과 상세가 따로 온다. 목록에는 저장된 분석 결과가 실려 있지 않고,
- * 행을 펼칠 때 그 행만 따로 가져온다 — 그 순서가 어긋나면 화면이 빈다.
- */
+/** 이력 화면. 목록에는 분석 결과가 없고, 행을 펼칠 때 따로 가져온다. */
 describe("HistoryList", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
@@ -209,7 +206,7 @@ describe("HistoryList", () => {
 
     await userEvent.click(await screen.findByText(DEMO_HISTORY_SUMMARIES[0].userInput!));
 
-    // 상세 파싱 실패와 같은 안내로 떨어진다 — 빈칸을 보여 주면 결과가 없는 것처럼 보인다
+    // 상세 파싱 실패와 같은 안내를 보여 준다
     expect(await screen.findByText(/읽을 수 없습니다/)).toBeInTheDocument();
   });
 
@@ -236,8 +233,7 @@ describe("HistoryList", () => {
   });
 
   it("한 건을 지운 뒤 더 보기를 눌러도 건너뛰는 행이 없다", async () => {
-    // 페이지 번호로 받던 때: 첫 페이지 [3, 2] 에서 3 을 지우면 서버 쪽 1 페이지는 1 부터가 아니라
-    // 그다음부터 시작해, 1 이 영영 보이지 않았다. 마지막으로 받은 id 다음부터 받으면 밀리지 않는다.
+    // 페이지 번호로 받으면 3 을 지운 뒤 1 이 건너뛰어진다. 마지막 id 다음부터 받으면 괜찮다.
     const [newest, middle, oldest] = DEMO_HISTORY_SUMMARIES;
     const requested: string[] = [];
     vi.mocked(fetch).mockImplementation(async (input, init) => {
@@ -265,7 +261,7 @@ describe("HistoryList", () => {
     expect(await screen.findByText(oldest.userInput!)).toBeInTheDocument();
     expect(requested.at(-1)).toContain(`before=${middle.id}`);
     expect(requested.at(-1)).not.toContain("page=");
-    // 전체 건수는 첫 페이지가 준 3 에서 지운 1 을 뺀 값이다. 커서 뒤 응답의 "남은 1건" 으로 덮지 않는다.
+    // 전체 건수 = 첫 페이지의 3 - 삭제 1. 커서 뒤 응답의 남은 건수로 덮지 않는다.
     expect(screen.getByText(/전체 2건 중 2건 표시/)).toBeInTheDocument();
   });
 

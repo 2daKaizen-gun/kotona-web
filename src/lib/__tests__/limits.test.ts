@@ -3,11 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { ANALYZE_TEXT_MAX, MEANING_MAX, PHRASE_MAX, USAGE_EXAMPLE_MAX } from "@/lib/limits";
 
-/**
- * 폼의 한도가 백엔드의 한도와 같은지. 어긋나면 둘 중 하나가 일어난다 —
- * 화면이 더 넉넉하면 사용자는 다 쓰고 나서 거절당하고, 더 빡빡하면 백엔드가
- * 받아 줄 문장을 화면이 막는다. 둘 다 조용히 일어난다.
- */
+/** 폼 한도가 백엔드(OpenAPI 스펙)와 같은지. */
 describe("입력 한도", () => {
   const schemas = JSON.parse(
     readFileSync(resolve(process.cwd(), "openapi/kotona-api.json"), "utf-8"),

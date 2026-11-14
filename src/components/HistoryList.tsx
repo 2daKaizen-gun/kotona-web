@@ -14,17 +14,13 @@ const PAGE_SIZE = 20;
 export default function HistoryList() {
   const [items, setItems] = useState<AnalysisHistorySummary[] | null>(null);
   const [total, setTotal] = useState(0);
-  /*
-   * 서버가 마지막으로 준 행의 id. "더 보기" 는 페이지 번호 대신 이것 다음부터 받는다.
-   * 예전에는 페이지 번호로 받아서, 한 건을 지우고 더 보기를 누르면 한 건을 건너뛰었다 —
-   * 지운 만큼 다음 페이지의 경계가 앞으로 당겨졌기 때문이다. 지우기는 이 값을 건드리지 않는다.
-   */
+  // 마지막으로 받은 행의 id. "더 보기" 는 이 다음부터 받아서 삭제해도 건너뛰지 않는다.
   const [cursor, setCursor] = useState<number | undefined>(undefined);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /** 첫 페이지면 목록을 새로 만들고, 커서가 있으면 그 뒤를 이어 붙인다. */
+  /** 커서가 없으면 새로 만들고, 있으면 이어 붙인다. */
   const loadPage = useCallback(async (before?: number) => {
     const query = new URLSearchParams({ size: String(PAGE_SIZE) });
     if (before !== undefined) query.set("before", String(before));
@@ -38,7 +34,7 @@ export default function HistoryList() {
     const result = data as HistoryPage;
     const rows = result.content ?? [];
     setItems((current) => (before === undefined ? rows : appendUnique(current ?? [], rows)));
-    // 커서 뒤의 응답이 주는 건수는 "남은 것" 이다. 전체 건수는 첫 페이지만 안다.
+    // 커서 뒤 응답의 건수는 남은 건수다
     if (before === undefined) setTotal(result.totalElements ?? 0);
     setHasMore(result.hasNext ?? false);
     const last = rows.at(-1)?.id;
@@ -75,7 +71,7 @@ export default function HistoryList() {
     }
   }
 
-  /** 성공하면 목록에서 빼고 true. 실패하면 목록은 그대로 두고 오류를 보여 준다. */
+  /** 성공하면 목록에서 빼고 true, 실패하면 오류 표시. */
   async function remove(id: number): Promise<boolean> {
     setError(null);
     try {
@@ -158,7 +154,7 @@ function HistoryItem({
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // 저장된 분석 결과는 목록에 실려 오지 않는다. 펼칠 때 그 행만 따로 가져온다.
+  // 분석 결과는 펼칠 때 따로 가져온다
   const [detail, setDetail] = useState<NuanceResponse | null>(null);
   const [detailState, setDetailState] = useState<"idle" | "loading" | "failed">("idle");
 
@@ -171,7 +167,7 @@ function HistoryItem({
     }
     setOpen(true);
 
-    // 한 번 받아 온 뒤로는 다시 접었다 펴도 재요청하지 않는다.
+  // 한 번 받으면 다시 요청하지 않는다
     if (detail || detailState === "loading" || item.id === undefined) return;
 
     setDetailState("loading");
@@ -191,7 +187,6 @@ function HistoryItem({
   async function handleDelete() {
     if (item.id === undefined) return;
     setDeleting(true);
-    // 성공하면 이 항목은 목록에서 사라지므로 상태를 되돌릴 필요가 없다.
     if (!(await onDelete(item.id))) {
       setDeleting(false);
       setConfirming(false);
@@ -265,7 +260,7 @@ function HistoryItem({
   );
 }
 
-/** 백엔드는 분석 결과 전체를 JSON 문자열로 저장해 둔다. 깨졌으면 요약 줄만 보여 준다. */
+/** 저장된 JSON 이 깨졌으면 요약만 보여 준다. */
 function parseResult(json: string | undefined): NuanceResponse | null {
   if (!json) return null;
   try {

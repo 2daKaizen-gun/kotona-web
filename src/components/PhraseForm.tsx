@@ -10,8 +10,8 @@ const FIELD =
   "focus:border-black/40 dark:border-white/15 dark:bg-white/5 dark:focus:border-white/40";
 
 /**
- * 표현 등록·수정 폼. PUT 이 전체 교체라서 두 경우 모두 모든 필드를 보낸다.
- * onSubmit 은 실패하면 보여 줄 문구를, 성공하면 null 을 돌려준다(성공 시 부모가 폼을 닫는다).
+ * 표현 등록·수정 폼. PUT 이 전체 교체라 항상 모든 필드를 보낸다.
+ * onSubmit 은 실패 시 문구, 성공 시 null 을 돌려준다.
  */
 export default function PhraseForm({
   initial,
@@ -41,7 +41,7 @@ export default function PhraseForm({
 
     let message: string | null;
     try {
-      // 빈 선택은 undefined 로 보낸다. JSON 에서 빠지므로 백엔드에는 null 로 저장된다.
+      // 빈 선택은 undefined 로 보내 null 로 저장되게 한다
       message = await onSubmit({
         phrase: phrase.trim(),
         meaning: meaning.trim(),
@@ -50,12 +50,10 @@ export default function PhraseForm({
         usageExample: usageExample.trim() || undefined,
       });
     } catch {
-      // onSubmit 은 실패를 문구로 돌려주기로 되어 있지만, 던지는 경우도 막아 둔다.
-      // 여기서 빠져나가면 saving 이 true 로 남아 폼이 "저장 중…" 에 영영 갇힌다.
+      // 던지는 경우에도 saving 이 true 로 남지 않게
       message = "저장하지 못했습니다. 잠시 후 다시 시도해 주세요.";
     }
 
-    // 성공(null)이면 부모가 폼을 닫으므로 saving 을 되돌릴 필요가 없다.
     if (message) {
       setError(message);
       setSaving(false);
@@ -130,7 +128,6 @@ export default function PhraseForm({
         <textarea
           lang="ja"
           rows={2}
-          // 예문은 한두 문장이라 붙여넣기가 잘릴 일이 드물다. 표현·뜻과 같은 방식으로 막는다.
           maxLength={USAGE_EXAMPLE_MAX}
           value={usageExample}
           onChange={(event) => setUsageExample(event.target.value)}

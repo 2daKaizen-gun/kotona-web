@@ -3,20 +3,13 @@ import type { Page } from "@playwright/test";
 
 /**
  * 데모 모드의 쓰기 거절 문구.
- *
- * <p>role=alert 로만 찾으면 둘이 잡힌다 — Next.js App Router 가 페이지 전환을 알리려고
- * 보이지 않는 role=alert 요소를 따로 심어 두기 때문이다. jsdom 단위 테스트에서는
- * 드러나지 않고 실제 브라우저에서만 보인다.
+ * Next.js 가 페이지 전환 알림용 role=alert 요소를 따로 넣어서 role 만으로는 두 개가 잡힌다.
  */
 function refusal(page: Page) {
   return page.getByRole("alert").filter({ hasText: "예시를 보여 주는 중이라" });
 }
 
-/**
- * 사용자가 실제로 하는 일을 처음부터 끝까지 따라간다.
- * 각 단계는 단위 테스트가 이미 보고 있다. 여기서 보는 것은 단계 사이의 이음새다 —
- * 브라우저가 route handler 에 닿고, route handler 가 데이터에 닿는지.
- */
+/** 사용자 흐름 전체. 브라우저 → route handler → 데이터 연결을 확인한다. */
 
 test.describe("분석", () => {
   test("예시 문장을 골라 분석하면 결과가 나온다", async ({ page }) => {
@@ -86,7 +79,7 @@ test.describe("이력", () => {
 
     await expect(page.getByText(/전체 3건 중 3건 표시/)).toBeVisible();
 
-    // 펼치는 순간 상세를 따로 가져온다 — 목록과 상세가 다른 요청이라는 게 실제로 동작하는지
+    // 펼칠 때 상세를 따로 가져오는지
     const detail = page.waitForResponse((response) => /\/api\/history\/\d+$/.test(response.url()));
     await page.getByText("ご提案の件、社内で検討させていただきます。").click();
     await detail;
@@ -95,7 +88,7 @@ test.describe("이력", () => {
   });
 
   test("예시 모드에서는 삭제를 거절하고 이유를 말한다", async ({ page }) => {
-    // 조용히 성공한 척하면 사용자는 지워진 줄 안다
+    // 성공한 것처럼 보이면 안 된다
     await page.goto("/history");
     await page.getByRole("button", { name: "삭제" }).first().click();
     await page.getByRole("button", { name: "삭제 확인" }).click();
