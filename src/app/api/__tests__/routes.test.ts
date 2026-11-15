@@ -1,14 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
- * route handler 를 진짜 백엔드 대신 가짜 fetch 위에서 돌린다.
- *
- * <p>브라우저 테스트는 예시 모드로만 돈다. 백엔드가 필요 없다는 게 장점이지만, 그래서
- * 실제로 백엔드를 부르는 쪽 — 주소를 만들고, API 키를 붙이고, 상태코드를 옮기고,
- * 연결 실패를 사람이 읽을 문장으로 바꾸는 코드 — 는 CI 에서 한 번도 실행되지 않았다.
- * 여기서 그 분기를 본다.
- *
- * <p>모듈을 그때그때 불러오는 이유는 backend.ts 가 주소와 키를 로드 시점에 읽기 때문이다.
+ * route handler 를 가짜 fetch 위에서 돌린다. E2E 는 데모 모드라 실제 백엔드 호출 경로
+ * (주소, API 키, 상태 코드 전달, 연결 실패 문구)는 여기서만 확인된다.
+ * backend.ts 가 환경변수를 로드 시점에 읽어서 모듈을 매번 새로 불러온다.
  */
 const BASE = "http://backend.test";
 
@@ -60,15 +55,15 @@ describe("POST /api/analyze", () => {
 
     expect(await response.json()).toEqual({ totalScore: 73 });
     expect(lastCall().url).toBe(`${BASE}/analyze`);
-    // 앞뒤 공백은 걷어서 보낸다 — 백엔드가 길이로 판정하는 곳이 있다
+    // 앞뒤 공백을 걷어서 보낸다
     expect(JSON.parse(lastCall().init.body as string)).toEqual({
       text: "ご確認",
       relationshipType: "EXTERNAL",
     });
   });
 
-  it("사용자의 IP 를 X-Forwarded-For 로 넘긴다 — 백엔드가 사람마다 세도록", async () => {
-    // 넘기지 않으면 모든 요청이 이 서버의 주소로 보여, 사용자 전원이 분당 20 회를 나눠 쓴다
+  it("사용자의 IP 를 X-Forwarded-For 로 넘긴다: 백엔드가 사람마다 세도록", async () => {
+    // 넘기지 않으면 모든 사용자가 분당 20회를 나눠 쓴다
     const { POST } = await import("@/app/api/analyze/route");
     backendAnswers({ totalScore: 73 });
     const request = post("http://x/api/analyze", { text: "ご確認" });
@@ -102,7 +97,7 @@ describe("POST /api/analyze", () => {
   });
 
   it("모르는 관계는 백엔드까지 가지 않고 거절한다", async () => {
-    // 예전에는 조용히 INTERNAL 로 바꿔 보냈다. 묻지 않은 맥락의 점수가 돌아왔다는 뜻이다.
+    // 모르는 값을 INTERNAL 로 바꿔 보내지 않는다
     const { POST } = await import("@/app/api/analyze/route");
 
     const response = await POST(post("http://x/api/analyze", { text: "ご確認", relationshipType: "EMAIL" }));
@@ -143,7 +138,7 @@ describe("POST /api/analyze", () => {
   });
 
   it("API 키는 설정됐을 때만, 서버에서만 붙인다", async () => {
-    // 키가 브라우저로 나가면 보호가 사라진다. 이 헤더를 붙이는 것이 BFF 가 있는 이유다.
+    // API 키는 서버에서만 붙인다
     process.env.KOTONA_API_KEY = "secret-key";
     vi.resetModules();
     const { POST } = await import("@/app/api/analyze/route");
@@ -166,7 +161,7 @@ describe("POST /api/analyze", () => {
   });
 
   it("백엔드의 상태코드와 문구를 그대로 옮긴다", async () => {
-    // 429 는 화면에서 "잠시 후 다시" 로, 500 은 다르게 다뤄진다. 뭉개면 안내가 틀어진다.
+    // 429 와 500 은 화면 안내가 다르다
     const { POST } = await import("@/app/api/analyze/route");
     backendAnswers({ error: "AI API 호출 한도를 초과했습니다." }, 429);
 
@@ -220,7 +215,7 @@ describe("GET /api/history", () => {
   });
 
   it("숫자가 아닌 페이지는 기본값으로 바꾼다", async () => {
-    // 상·하한은 백엔드가 다시 건다. 여기서는 숫자로만 만들어 넘긴다.
+    // 범위는 백엔드가 맞춘다
     const { GET } = await import("@/app/api/history/route");
     backendAnswers({ content: [] });
 
@@ -281,7 +276,7 @@ describe("/api/history/[id]", () => {
 
   it("삭제는 본문 없이 204 로 답한다", async () => {
     const { DELETE } = await import("@/app/api/history/[id]/route");
-    // 204 는 본문을 가질 수 없다 — Response 생성자가 빈 문자열도 거절한다
+    // 204 는 본문을 가질 수 없다
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
 
     const response = await DELETE(new Request("http://x/api/history/8"), context("8"));
@@ -312,7 +307,7 @@ describe("/api/phrases", () => {
     expect(lastCall().url).toBe(`${BASE}/api/phrases?page=0&size=20`);
   });
 
-  it("커서를 백엔드로 넘긴다 — 정중도가 없던 행이면 afterLevel 없이", async () => {
+  it("커서를 백엔드로 넘긴다: 정중도가 없던 행이면 afterLevel 없이", async () => {
     const { GET } = await import("@/app/api/phrases/route");
     backendAnswers({ content: [] });
 
@@ -424,8 +419,7 @@ describe("/api/phrases", () => {
 });
 
 describe("예시 모드", () => {
-  // 배포된 사이트가 도는 방식이다. 브라우저 테스트가 덮지만, 읽기는 픽스처로 답하고
-  // 쓰기는 이유를 붙여 거절한다는 규칙 자체는 여기서 확인하는 편이 빠르다.
+  // 데모 모드: 읽기는 픽스처, 쓰기는 거절
   beforeEach(() => {
     vi.resetModules();
     process.env.KOTONA_DEMO = "true";
@@ -461,7 +455,7 @@ describe("예시 모드", () => {
   });
 
   it("쓰기는 403 으로 거절하고 이유를 말한다", async () => {
-    // 조용히 성공한 척하면 사용자는 저장된 줄 알고 떠난다
+    // 성공한 것처럼 보이면 안 된다
     const { POST } = await import("@/app/api/phrases/route");
     const { DELETE } = await import("@/app/api/history/[id]/route");
 
@@ -476,8 +470,7 @@ describe("예시 모드", () => {
 });
 
 describe("예상 못 한 오류", () => {
-  // callBackend 는 실패를 BackendError 로 감싸 준다. 그 약속이 깨졌을 때 route handler 가
-  // 무엇을 하는지 — 프레임워크의 기본 500 HTML 이 아니라 우리 JSON 이 나가는지 — 를 본다.
+  // callBackend 가 BackendError 가 아닌 예외를 던져도 JSON 500 으로 답하는지
   it("BackendError 가 아닌 오류는 500 과 우리 문구로 답한다", async () => {
     vi.resetModules();
     vi.doMock("@/lib/backend", async () => {

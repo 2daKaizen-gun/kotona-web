@@ -17,27 +17,20 @@ type Editing = null | "new" | number;
 export default function PhraseDictionary() {
   const [phrases, setPhrases] = useState<BusinessPhrase[] | null>(null);
   const [total, setTotal] = useState(0);
-  /*
-   * 서버가 마지막으로 준 행의 (id, 정중도). "더 보기" 는 페이지 번호 대신 이것 다음부터 받는다 —
-   * 페이지 번호로 받으면 앞쪽 행이 지워지거나 끼어들 때 경계가 밀려 한 건을 건너뛴다.
-   */
+  // 마지막으로 받은 행의 (id, 정중도). "더 보기" 는 이 다음부터 받는다.
   const [cursor, setCursor] = useState<PhraseCursor | undefined>(undefined);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("ALL");
   const [editing, setEditing] = useState<Editing>(null);
-  // 쓰기가 성공할 때마다 올려서 목록을 다시 받는다. 정렬(정중도 순)을 백엔드에 맡기기 위해서다.
+  // 쓰기가 성공하면 올려서 목록을 다시 받는다 (정렬은 백엔드가 한다)
   const [version, setVersion] = useState(0);
 
-  /*
-   * 가장 최근에 보낸 목록 요청의 번호. 응답은 보낸 순서대로 오지 않는다 —
-   * 「쿠션어」 를 누르고 곧바로 「메일」 을 누르면, 늦게 도착한 쿠션어 응답이 메일 목록을 덮어
-   * 칩은 「메일」 인데 쿠션어 표현이 보였다. 더 나중 요청이 있으면 먼저 보낸 요청의 답은 버린다.
-   */
+  // 마지막 요청 번호. 필터를 빨리 바꾸면 늦게 온 이전 응답을 버린다.
   const latestRequest = useRef(0);
 
-  /** 첫 페이지면 목록을 새로 만들고, 커서가 있으면 그 뒤를 이어 붙인다. */
+  /** 커서가 없으면 새로 만들고, 있으면 이어 붙인다. */
   const loadPage = useCallback(async (situation: Filter, after?: PhraseCursor) => {
     const request = ++latestRequest.current;
     const query = new URLSearchParams({ size: String(PAGE_SIZE) });
@@ -57,7 +50,7 @@ export default function PhraseDictionary() {
     const result = data as PhrasePage;
     const rows = result.content ?? [];
     setPhrases((current) => (after ? appendUnique(current ?? [], rows) : rows));
-    // 커서 뒤의 응답이 주는 건수는 "남은 것" 이다. 전체 건수는 첫 페이지만 안다.
+    // 커서 뒤 응답의 건수는 남은 건수다
     if (!after) setTotal(result.totalElements ?? 0);
     setHasMore(result.hasNext ?? false);
     const last = rows.at(-1);
@@ -66,8 +59,7 @@ export default function PhraseDictionary() {
     }
   }, []);
 
-  // 필터가 바뀌면 서버에 다시 묻는다. 예전에는 전체를 받아 화면에서 걸렀지만,
-  // 사용자가 표현을 추가할 수 있게 된 뒤로는 전체를 받는다는 전제가 성립하지 않는다.
+  // 필터가 바뀌면 서버에 다시 요청한다.
   useEffect(() => {
     let cancelled = false;
 
@@ -98,7 +90,7 @@ export default function PhraseDictionary() {
     }
   }
 
-  /** 성공하면 null, 실패하면 폼에 보여 줄 문구(백엔드의 400·409 문구 그대로). */
+  /** 성공하면 null, 실패하면 폼에 보여 줄 문구. */
   async function save(request: PhraseRequest, id?: number): Promise<string | null> {
     try {
       const response = await fetch(id === undefined ? "/api/phrases" : `/api/phrases/${id}`, {
@@ -114,7 +106,7 @@ export default function PhraseDictionary() {
       return "네트워크 오류가 발생했습니다.";
     }
 
-    // 저장한 표현이 지금 필터에 걸려 보이지 않으면, 저장이 안 된 것처럼 보인다.
+    // 저장한 표현이 현재 필터에 안 보이면 필터를 해제한다
     if (filter !== "ALL" && request.situation !== filter) setFilter("ALL");
     setEditing(null);
     setError(null);
@@ -234,8 +226,7 @@ export default function PhraseDictionary() {
   );
 }
 
-// 건수는 더 이상 보여 주지 않는다. 한 페이지만 받으므로 상황별 전체 건수를 알 수 없고,
-// 받아 온 것만 세어 보여 주면 틀린 숫자가 된다. 현재 목록의 전체 건수는 위에 따로 적는다.
+// 한 페이지만 받으므로 상황별 건수는 표시하지 않는다.
 function FilterChip({
   label,
   active,
@@ -276,7 +267,6 @@ function PhraseCard({
   async function handleDelete() {
     if (phrase.id === undefined) return;
     setDeleting(true);
-    // 성공하면 목록을 다시 받으면서 이 카드가 사라진다.
     if (!(await onDelete(phrase.id))) {
       setDeleting(false);
       setConfirming(false);

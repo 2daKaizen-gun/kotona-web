@@ -15,15 +15,12 @@ export type AnalysisHistorySummary = components["schemas"]["AnalysisHistorySumma
 export type HistoryPage = components["schemas"]["PageResponseAnalysisHistorySummaryDTO"];
 export type PhrasePage = components["schemas"]["PageResponseBusinessPhrase"];
 
-/**
- * 백엔드 enum 에서 그대로 가져온다. 손으로 다시 적어 두면 값이 늘어날 때 조용히 갈라지고,
- * 화면에는 있지만 백엔드가 모르는 선택지(또는 그 반대)가 생긴다.
- */
+/** 백엔드 enum 에서 가져온다. 직접 적으면 값이 늘어날 때 어긋난다. */
 export type RelationshipType = NonNullable<
   components["schemas"]["AnalyzeRequestDTO"]["relationshipType"]
 >;
 
-/** 런타임 확인용. 타입은 컴파일되면 사라지므로, 들어온 값은 값으로 확인해야 한다. */
+/** 런타임 검사용 */
 export const RELATIONSHIP_TYPES = [
   "INTERNAL",
   "EXTERNAL",
@@ -35,16 +32,13 @@ export function isRelationshipType(value: unknown): value is RelationshipType {
 }
 
 /**
- * 백엔드(Spring) 호출을 한 곳에 모은다.
- *
- * 이 모듈은 서버에서만 실행된다. KOTONA_API_KEY 는 NEXT_PUBLIC_ 접두사가 없으므로
- * 클라이언트 번들에 포함되지 않는다 — 브라우저가 백엔드를 직접 부르지 않고
- * route handler 를 거치는 이유가 이것이다.
+ * 백엔드 호출 모음. 서버에서만 실행된다.
+ * KOTONA_API_KEY 는 NEXT_PUBLIC_ 이 아니라 브라우저 번들에 들어가지 않는다.
  */
 const BASE_URL = process.env.KOTONA_API_URL ?? "http://localhost:8081";
 const API_KEY = process.env.KOTONA_API_KEY;
 
-/** 백엔드가 4xx/5xx 를 돌려줬을 때. status 를 그대로 전달해 route handler 가 매핑한다. */
+/** 백엔드 4xx/5xx. status 를 route handler 가 그대로 쓴다. */
 export class BackendError extends Error {
   constructor(
     readonly status: number,
@@ -58,15 +52,14 @@ export class BackendError extends Error {
 type FetchOptions = {
   method?: string;
   body?: unknown;
-  /** 분석은 25초 이상 걸린다. 기본 타임아웃으로는 부족하다. */
+  /** 분석은 25초 이상 걸려서 기본값으로는 부족하다. */
   timeoutMs?: number;
-  /** 요청한 사용자의 IP. 백엔드가 분당 제한을 사람마다 세도록 X-Forwarded-For 로 넘긴다. */
+  /** 사용자 IP. 백엔드가 요청 제한을 사용자별로 세도록 X-Forwarded-For 로 넘긴다. */
   clientIp?: string;
 };
 
 async function callBackend<T>(path: string, options: FetchOptions = {}): Promise<T> {
-  // 분석은 꼬리가 길다(관측 최대 79초). route handler 의 maxDuration(120초) 안에 머무르되
-  // 그보다 먼저 끊어, 프레임워크가 자르기 전에 우리 문구로 안내한다.
+  // 분석은 최대 79초까지 걸렸다. maxDuration(120초)보다 먼저 끊어 직접 안내한다.
   const { method = "GET", body, timeoutMs = 110_000, clientIp } = options;
 
   const controller = new AbortController();
@@ -77,7 +70,7 @@ async function callBackend<T>(path: string, options: FetchOptions = {}): Promise
       method,
       headers: {
         "Content-Type": "application/json",
-        // 키가 설정된 경우에만 붙인다. 로컬 백엔드는 API_KEY 미설정이라 없어도 통과한다.
+        // 키가 있을 때만 붙인다
         ...(API_KEY ? { "X-API-KEY": API_KEY } : {}),
         ...(clientIp ? { "X-Forwarded-For": clientIp } : {}),
       },
@@ -99,7 +92,7 @@ async function callBackend<T>(path: string, options: FetchOptions = {}): Promise
     if (error instanceof Error && error.name === "AbortError") {
       throw new BackendError(504, "요청이 시간 내에 끝나지 않았습니다. 다시 시도해 주세요.");
     }
-    // 백엔드가 안 떠 있을 때가 대부분이라 그렇게 안내한다.
+    // 대부분 백엔드가 꺼져 있는 경우다
     throw new BackendError(
       503,
       `백엔드(${BASE_URL})에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요.`,
@@ -115,18 +108,11 @@ async function readErrorMessage(response: Response): Promise<string> {
     const data = await response.json();
     if (data && typeof data.error === "string") return data.error;
   } catch {
-    // 본문이 JSON 이 아니면 아래 기본 문구로 떨어진다.
   }
   return `요청이 실패했습니다 (HTTP ${response.status}).`;
 }
 
-/**
- * 예시를 보여 주는 중에는 저장할 곳이 없다.
- *
- * <p>성공한 척하는 선택지도 있었지만 그러지 않는다. 서버리스에서는 요청 사이에 상태가
- * 남지 않으므로 새로고침하면 되돌아가고, 무엇보다 사용자가 저장됐다고 믿게 만든다.
- * 403 은 "요청은 이해했으나 거절한다" 이고, 지금 상황이 정확히 그렇다.
- */
+/** 데모 모드에서는 쓰기를 403 으로 거절한다. 저장된 것처럼 보이지 않게 하려는 것이다. */
 function demoWriteRefused<T>(): Promise<T> {
   return Promise.reject(
     new BackendError(
@@ -147,12 +133,7 @@ export function analyze(text: string, relationshipType: RelationshipType, client
   });
 }
 
-/**
- * 이력 목록. 요약만 담기므로 저장된 분석 결과 전체는 여기 없다 —
- * 한 건을 펼칠 때 getHistoryDetail 로 그 행만 가져온다.
- *
- * <p>`before` 가 있으면 그 id 보다 오래된 것부터 — "더 보기" 는 페이지 번호가 아니라 이것을 쓴다.
- */
+/** 이력 목록(요약). 상세는 getHistoryDetail. `before` 가 있으면 그 id 보다 오래된 것부터. */
 export function getHistory(page = 0, size = 20, before?: number) {
   if (DEMO_MODE) {
     return Promise.resolve(demoHistoryPage(page, size, before));
@@ -177,10 +158,7 @@ export function deleteHistory(id: number) {
   return callBackend<void>(`/api/history/${id}`, { method: "DELETE", timeoutMs: 15_000 });
 }
 
-/**
- * 사전 "더 보기" 의 커서 — 마지막으로 받은 행의 id 와 정중도. 정중도가 없던 행이면 afterLevel 도 없다.
- * 사전은 정중도 순이라 id 하나로는 이어 받을 수 없다.
- */
+/** 사전 "더 보기" 커서. 마지막 행의 id 와 정중도(없으면 afterLevel 생략). */
 export type PhraseCursor = { afterId: number; afterLevel?: number };
 
 export function getPhrases(situation: string | undefined, page = 0, size = 20, cursor?: PhraseCursor) {
@@ -198,7 +176,7 @@ export function getPhrases(situation: string | undefined, page = 0, size = 20, c
   return callBackend<PhrasePage>(path, { timeoutMs: 15_000 });
 }
 
-// 사전 쓰기는 백엔드가 API 키를 요구한다. 읽기와 달리 브라우저에서 직접 부를 수 없는 이유다.
+// 사전 쓰기는 API 키가 필요하다.
 export function createPhrase(body: PhraseRequest) {
   if (DEMO_MODE) return demoWriteRefused();
   return callBackend<BusinessPhrase>("/api/phrases", { method: "POST", body, timeoutMs: 15_000 });

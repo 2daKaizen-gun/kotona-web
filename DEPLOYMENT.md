@@ -1,57 +1,32 @@
 # Deployment
 
-The frontend is deployed on its own. The backend is not hosted — it is a JVM
-service with a MySQL database and requests that run up to 100 seconds. That was
-first read as a paid hosting shape ([kotona-analyzer#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27));
-measured since, it needs about 320 MB and real MySQL 8, which some free tiers
-do hold. The options and a recommendation are in
-[kotona-analyzer `docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md).
-Hosting it is a decision not yet taken, not a cost that rules it out.
+The frontend is deployed on Vercel. The backend is not hosted yet: it needs about 320 MB of memory, real MySQL 8, and requests of up to 100 s. Some free tiers can hold that; options are in [kotona-analyzer `docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md) ([#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27)).
 
-So the deployed site runs in **demo mode**: prepared samples, an amber banner on
-every page saying so, and writes refused rather than faked.
+Until then the site runs in demo mode: recorded samples, a banner on every page, and writes refused.
 
 ## Vercel
 
-Import `2daKaizen-gun/kotona-web` in the Vercel dashboard. Framework detection,
-build command and output directory all need no changes.
+Import `2daKaizen-gun/kotona-web` in the Vercel dashboard. The detected defaults work as is.
 
-Set one environment variable, for **all** environments:
+Set one environment variable for all environments:
 
 | Name | Value |
 |---|---|
 | `KOTONA_DEMO` | `true` |
 
-That is the whole configuration. `KOTONA_API_URL` and `KOTONA_API_KEY` stay unset
-— in demo mode nothing reaches out.
+`KOTONA_API_URL` and `KOTONA_API_KEY` stay unset.
 
 ### `KOTONA_DEMO` is read at build time
 
-`/`, `/history` and `/phrases` are statically prerendered, so the banner is baked
-into the HTML when the site is built. Route handlers under `/api/*` read the
-variable at request time instead.
+`/`, `/history` and `/phrases` are prerendered, so the banner is baked into the HTML at build time, while `/api/*` reads the variable per request. If the variable is set after a build, the API serves samples but the pages have no banner. Set it before the first deploy, and redeploy whenever it changes.
 
-Setting the variable *after* a build therefore produces the worst possible state:
-the API serves samples while the pages carry no banner — invented data with
-nothing saying it is invented. Vercel exposes project environment variables
-during the build, so setting it before the first deploy is enough; if it is ever
-added or changed later, redeploy.
+## Switching to a real backend
 
-## Going live for real
+Only environment variables change:
 
-When a backend exists, the same deployment becomes real by changing environment
-variables only:
-
-1. Set `KOTONA_API_URL` to the backend's public URL.
-2. Set `KOTONA_API_KEY` to match the backend's `API_KEY`.
-3. Set `KOTONA_SITE_PASSWORD`. The route handlers attach the key to every call
-   they forward, whoever made it — without a password in front of them, the key
-   protects nothing. Visitors get the browser's own sign-in prompt; the user name
-   is ignored.
-4. Remove `KOTONA_DEMO` (or set it to anything other than `true`).
-5. Set `CORS_ALLOWED_ORIGINS` on the backend to the Vercel domain.
-6. Redeploy — required, because of the build-time read above.
-
-No code changes. Demo mode is an explicit flag rather than an automatic fallback
-precisely so this switch is deliberate: a backend that goes down in production
-returns an honest error instead of quietly serving samples as if they were real.
+1. `KOTONA_API_URL`: the backend's public URL
+2. `KOTONA_API_KEY`: same as the backend's `API_KEY`
+3. `KOTONA_SITE_PASSWORD`: required, because the route handlers forward the key for any caller. Visitors get the browser's sign-in prompt; the user name is ignored
+4. Remove `KOTONA_DEMO`
+5. On the backend, set `CORS_ALLOWED_ORIGINS` to the Vercel domain
+6. Redeploy (build-time read above)

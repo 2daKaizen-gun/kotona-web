@@ -9,10 +9,7 @@ import {
   pickDemoAnalysis,
 } from "@/lib/demo-data";
 
-/**
- * 예시 데이터는 백엔드 없이 배포된 사이트가 보여 주는 전부다.
- * 여기가 어긋나면 사람들이 보는 화면이 바로 어긋난다.
- */
+/** 데모 모드에서 보여 주는 예시 데이터. */
 describe("분석 예시 고르기", () => {
   it("소프트 리젝션 신호가 있으면 그 예시를 고른다", () => {
     const result = pickDemoAnalysis("ご提案の件、社内で検討させていただきます。");
@@ -173,7 +170,7 @@ describe("숙어 사전 예시", () => {
 });
 
 describe("숙어 페이지 자르기", () => {
-  it("백엔드와 같은 정렬을 따른다 — 정중도 내림차순, 같으면 id 오름차순", () => {
+  it("백엔드와 같은 정렬을 따른다: 정중도 내림차순, 같으면 id 오름차순", () => {
     // 예시가 다르게 정렬되면 백엔드 있을 때와 없을 때 화면 순서가 달라진다
     const rows = demoPhrasePage(undefined, 0, 100).content!;
     const keys = rows.map((row) => [-(row.politenessLevel ?? 0), row.id ?? 0]);
@@ -204,7 +201,7 @@ describe("숙어 페이지 자르기", () => {
     expect(first.filter((id) => second.includes(id))).toHaveLength(0);
   });
 
-  it("커서로 끝까지 걸으면 페이지로 받은 순서와 같다 — 백엔드와 같은 규칙", () => {
+  it("커서로 끝까지 걸으면 페이지로 받은 순서와 같다: 백엔드와 같은 규칙", () => {
     // 예시 모드에서 "더 보기" 가 백엔드와 다르게 굴면, 배포된 화면만 다르게 동작한다
     const all = demoPhrasePage(undefined, 0, 100).content!.map((row) => row.id);
     const walked: (number | undefined)[] = [];

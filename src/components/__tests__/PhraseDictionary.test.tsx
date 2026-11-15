@@ -4,10 +4,7 @@ import userEvent from "@testing-library/user-event";
 import PhraseDictionary from "@/components/PhraseDictionary";
 import { DEMO_PHRASES } from "@/lib/demo-data";
 
-/**
- * 사전 화면은 필터를 서버에 묻는다. 예전에는 전체를 받아 화면에서 걸렀지만,
- * 사용자가 표현을 추가할 수 있게 된 뒤로 그 전제가 성립하지 않는다.
- */
+/** 사전 화면. 필터는 서버에 다시 요청한다. */
 describe("PhraseDictionary", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
@@ -28,7 +25,7 @@ describe("PhraseDictionary", () => {
     };
   }
 
-  /** situation 쿼리에 따라 걸러서 응답한다 — 실제 백엔드와 같은 방식. */
+  /** situation 쿼리에 따라 걸러서 응답한다 (백엔드와 같은 방식) */
   function routeFetch(options: { writeOk?: boolean; writeError?: string } = {}) {
     vi.mocked(fetch).mockImplementation(async (input, init) => {
       const url = new URL(String(input), "http://localhost");
@@ -84,8 +81,7 @@ describe("PhraseDictionary", () => {
   });
 
   it("필터를 빠르게 바꾸면 늦게 도착한 이전 필터의 답은 버린다", async () => {
-    // 쿠션어 응답을 붙잡아 두고 메일을 누른다. 쿠션어 답이 나중에 도착해도 화면은 메일이어야 한다.
-    // 예전에는 늦게 온 쪽이 이겨서, 칩은 「메일」 인데 목록은 쿠션어였다.
+    // 쿠션어 응답을 늦게 돌려줘도 화면은 마지막에 누른 메일이어야 한다
     let releaseCushion: () => void = () => {};
     vi.mocked(fetch).mockImplementation(async (input) => {
       const situation = new URL(String(input), "http://localhost").searchParams.get("situation");

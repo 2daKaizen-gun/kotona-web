@@ -17,7 +17,7 @@ export const CATEGORY_LABELS: Record<string, string> = {
   CASUAL: "일상 대화",
 };
 
-/** 백엔드의 배점: 정중도 40 / 간접성 30 / 에티켓 30 */
+/** 배점: 정중도 40 / 간접성 30 / 에티켓 30 */
 const METRIC_MAX = { politeness: 40, indirectness: 30, etiquette: 30 } as const;
 
 export default function ResultView({
@@ -25,7 +25,7 @@ export default function ResultView({
   sample = false,
 }: {
   result: NuanceResponse;
-  /** 예시 데이터인지. 결과 카드만 잘려 공유돼도 알아볼 수 있도록 여기에도 표시한다. */
+  /** 예시 데이터 표시 */
   sample?: boolean;
 }) {
   const risk = RISK_STYLES[result.riskAnalysis?.riskLevel ?? "SAFE"] ?? RISK_STYLES.SAFE;
@@ -164,12 +164,7 @@ const ADJUSTED_LABELS: Record<string, string> = {
   riskLevel: "리스크",
 };
 
-/**
- * 규칙이 모델 점수를 고친 내역.
- *
- * 점수만 보여 주던 동안에는 73점이 모델의 판단인지 우리 규칙이 깎은 결과인지 알 수 없었다.
- * 규칙이 틀릴 수 있는 쪽이고 실제로 틀린 적도 있으므로, 고친 것은 고쳤다고 적는다.
- */
+/** 규칙이 모델 점수를 바꾼 내역. 점수가 모델 판단인지 규칙 감점인지 보이게 한다. */
 function ScoreAdjustments({
   adjustments,
 }: {
@@ -239,7 +234,7 @@ function SmartReplyCard({ reply }: { reply: NonNullable<NuanceResponse["smartRep
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // 클립보드 권한이 없으면 조용히 넘어간다. 텍스트는 화면에 그대로 보인다.
+      // 클립보드 권한이 없으면 무시
     }
   }
 

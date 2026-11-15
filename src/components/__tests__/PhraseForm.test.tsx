@@ -6,11 +6,7 @@ import type { PhraseRequest } from "@/lib/backend";
 import { DEMO_PHRASES } from "@/lib/demo-data";
 import { MEANING_MAX, PHRASE_MAX, USAGE_EXAMPLE_MAX } from "@/lib/limits";
 
-/**
- * 폼은 사용자가 입력한 것을 백엔드가 받을 모양으로 바꾼다. 공백을 걷어내고,
- * 비워 둔 선택 항목을 빈 문자열이 아니라 "없음" 으로 보낸다.
- * 백엔드 검증은 빈 문자열을 값으로 보므로, 이 둘이 어긋나면 400 이 난다.
- */
+/** 표현 폼. 공백을 걷고, 비운 선택 항목은 빈 문자열이 아니라 없음으로 보낸다(빈 문자열은 400). */
 describe("PhraseForm", () => {
   function setup(onSubmit = vi.fn<(r: PhraseRequest) => Promise<string | null>>().mockResolvedValue(null)) {
     const onCancel = vi.fn();
@@ -129,8 +125,7 @@ describe("PhraseForm", () => {
   });
 
   it("저장이 예외로 끝나도 폼이 멈추지 않는다", async () => {
-    // onSubmit 은 문구를 돌려주기로 약속했지만, 약속을 어기고 던지는 호출자도 있다.
-    // 그때 "저장 중…" 에 갇히면 폼을 닫는 것 말고는 방법이 없다.
+    // onSubmit 이 던져도 "저장 중…" 에 멈추지 않아야 한다
     const onSubmit = vi.fn().mockRejectedValue(new Error("network down"));
     setup(onSubmit);
     await userEvent.type(phraseInput(), "承知しました");
@@ -142,7 +137,7 @@ describe("PhraseForm", () => {
   });
 
   it("필드 한도가 백엔드와 같다", () => {
-    // 예문에만 한도가 없어서, 너무 긴 예문은 "이미 등록된 표현" 이라는 엉뚱한 이유로 거절됐다
+    // 예문 한도가 없으면 너무 긴 예문이 중복 오류로 잘못 거절된다
     setup();
 
     expect(phraseInput()).toHaveAttribute("maxLength", String(PHRASE_MAX));

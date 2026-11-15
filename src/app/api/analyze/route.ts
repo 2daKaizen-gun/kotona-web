@@ -3,7 +3,7 @@ import { analyze, BackendError, isRelationshipType, RELATIONSHIP_TYPES } from "@
 import { ANALYZE_TEXT_MAX } from "@/lib/limits";
 import { clientIpOf } from "@/lib/request-params";
 
-/** 백엔드 분석은 25초 안팎이라 기본 실행시간으로는 모자란다. */
+/** 분석이 25초 안팎이라 기본 실행 시간으로는 부족하다. */
 export const maxDuration = 120;
 
 export async function POST(request: Request) {
@@ -18,7 +18,6 @@ export async function POST(request: Request) {
   if (!text) {
     return NextResponse.json({ error: "분석할 문장을 입력해 주세요." }, { status: 400 });
   }
-  // 백엔드도 거절하지만, 화면을 거치지 않은 요청까지 왕복시킬 이유는 없다.
   if (text.length > ANALYZE_TEXT_MAX) {
     return NextResponse.json(
       { error: `분석할 문장은 ${ANALYZE_TEXT_MAX}자 이하여야 합니다.` },
@@ -26,8 +25,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 관계를 비워 두는 것은 허용한다 — 백엔드가 사내로 본다. 다만 모르는 값을 사내로
-  // 바꿔치기하지는 않는다. 묻지 않은 맥락의 점수를 돌려주느니 무엇이 잘못됐는지 말하는 편이 낫다.
+  // 비어 있으면 사내로 보내고, 모르는 값은 400 으로 거절한다.
   const raw = payload.relationshipType;
   const given = raw === undefined || raw === null || raw === "";
   if (!given && !isRelationshipType(raw)) {
@@ -39,7 +37,7 @@ export async function POST(request: Request) {
   const relationshipType = given ? "INTERNAL" : raw;
 
   try {
-    // 사용자 IP 를 함께 넘긴다. 넘기지 않으면 백엔드는 모든 사용자를 이 서버 하나로 센다.
+    // 사용자별 요청 제한을 위해 IP 를 넘긴다
     return NextResponse.json(await analyze(text, relationshipType, clientIpOf(request)));
   } catch (error) {
     return toErrorResponse(error);

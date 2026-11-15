@@ -8,10 +8,7 @@ const pathname = vi.hoisted(() => ({ current: "/" }));
 vi.mock("next/navigation", () => ({ usePathname: () => pathname.current }));
 
 describe("DemoBanner", () => {
-  /**
-   * 배포된 사이트가 기만이 아니게 만드는 유일한 장치다.
-   * 문구가 흐려지거나 빠지면 지어낸 분석을 진짜처럼 보여 주게 된다.
-   */
+  /** 데모 배너. 예시 데이터라는 걸 알리는 문구가 있어야 한다. */
   it("예시 데이터라는 것을 분명히 말한다", () => {
     render(<DemoBanner />);
 
@@ -98,7 +95,7 @@ describe("ProgressIndicator", () => {
   });
 
   it("시간이 지나면 경과 초가 올라간다", () => {
-    // 이게 멈춰 있으면 화면이 얼어붙은 것처럼 보인다 — 이 컴포넌트가 있는 이유다
+    // 단계가 넘어가지 않으면 멈춘 것처럼 보인다
     render(<ProgressIndicator />);
 
     advance(5);

@@ -6,11 +6,11 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const situation = params.get("situation")?.trim();
 
-  // 백엔드가 상한(100)과 하한을 다시 걸어 주므로 여기서는 숫자로만 만들어 넘긴다.
+  // 범위는 백엔드가 맞춘다
   const page = toNumber(params.get("page"), 0);
   const size = toNumber(params.get("size"), 20);
 
-  // "더 보기" 의 커서. 없으면 첫 페이지이고, 있는데 형식이 틀리면 백엔드까지 갈 이유가 없다.
+  // "더 보기" 커서. 형식이 틀리면 여기서 400
   const cursor = cursorFrom(params);
   if (cursor === null) {
     return NextResponse.json({ error: "잘못된 커서입니다." }, { status: 400 });
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   }
 }
 
-/** 커서가 없으면 undefined, 형식이 틀리면 null. 정중도는 1~5 이고, 없던 행이면 비어 온다. */
+/** 커서 없으면 undefined, 형식이 틀리면 null. 정중도는 1~5 이고 없을 수 있다. */
 function cursorFrom(params: URLSearchParams): PhraseCursor | undefined | null {
   const rawId = params.get("afterId");
   const rawLevel = params.get("afterLevel");
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "요청 본문이 올바른 JSON 이 아닙니다." }, { status: 400 });
   }
 
-  // 필드 검증은 백엔드가 맡는다. 왕복이 짧고, 백엔드가 필드별 400·중복 409 문구를 이미 돌려준다.
+  // 필드 검증은 백엔드가 한다
   try {
     return NextResponse.json(await createPhrase(payload as PhraseRequest), { status: 201 });
   } catch (error) {

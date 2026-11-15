@@ -5,11 +5,11 @@ import { toId, toNumber } from "@/lib/request-params";
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
 
-  // 백엔드가 상한(100)과 하한을 다시 걸어 주므로 여기서는 숫자로만 만들어 넘긴다.
+  // 범위는 백엔드가 맞춘다
   const page = toNumber(params.get("page"), 0);
   const size = toNumber(params.get("size"), 20);
 
-  // "더 보기" 의 커서. 없으면 첫 페이지이고, 있는데 id 가 아니면 백엔드까지 갈 이유가 없다.
+  // "더 보기" 커서. id 가 아니면 여기서 400
   const rawBefore = params.get("before");
   const before = rawBefore === null || rawBefore === "" ? undefined : toId(rawBefore);
   if (before === null) {

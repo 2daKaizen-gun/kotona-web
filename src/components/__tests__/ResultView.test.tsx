@@ -5,10 +5,7 @@ import ResultView from "@/components/ResultView";
 import type { NuanceResponse } from "@/lib/backend";
 import { pickDemoAnalysis } from "@/lib/demo-data";
 
-/**
- * 결과 화면은 분석 응답을 그대로 그린다. 생성된 타입에서 모든 필드가 선택이라
- * 일부만 담긴 응답도 타입상 합법이다 — 화면이 그걸 견디는지가 핵심이다.
- */
+/** 결과 화면. 생성된 타입은 모든 필드가 선택이라 일부만 있는 응답도 그려야 한다. */
 describe("ResultView", () => {
   const full = pickDemoAnalysis("検討させていただきます");
 
@@ -103,7 +100,7 @@ describe("ResultView", () => {
     });
 
     it("클립보드 권한이 없으면 조용히 넘어간다", async () => {
-      // 본문은 화면에 그대로 보인다. 여기서 화면이 깨지면 읽을 수도 없게 된다.
+      // 실패해도 본문은 보여야 한다
       stubClipboard(async () => {
         throw new Error("NotAllowedError");
       });
@@ -127,7 +124,7 @@ describe("ResultView", () => {
     };
 
     it("규칙이 고친 내역을 항목·전후·이유와 함께 보여 준다", async () => {
-      // 73 점이 모델의 판단인지 규칙이 깎은 결과인지 구분할 수 없던 자리다
+      // 모델 점수인지 규칙 감점인지 보여야 한다
       render(<ResultView result={adjusted} />);
 
       await userEvent.click(screen.getByText(/이 점수가 나온 과정/));
@@ -159,8 +156,7 @@ describe("ResultView", () => {
       expect(screen.getByText(/완전하지 않습니다/)).toBeInTheDocument();
     });
 
-    // 규칙의 오경보가 0 건이어도, 등급은 둘 중 더 위험한 쪽이라 AI 가 과하게 읽으면
-    // 그 경고가 화면에 그대로 뜬다. 그 사실을 카드에서 빼면 수치가 실제보다 좋게 읽힌다.
+    // 등급은 AI 와 규칙 중 더 위험한 쪽이라는 설명이 있어야 한다
     it("등급이 둘 중 더 위험한 쪽이라는 것도 밝힌다", async () => {
       render(<ResultView result={adjusted} />);
 

@@ -1,10 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { errorMessage, readJson } from "@/lib/read-json";
 
-/**
- * 화면 세 곳이 응답을 이 함수로 읽는다. 이력·사전 화면은 예전에 HTML 오류 페이지를 받으면
- * `Unexpected token '<'` 를 사용자에게 그대로 보여 줬다.
- */
+/** HTML 오류 페이지가 와도 `Unexpected token '<'` 같은 문구가 나가지 않는지. */
 describe("readJson", () => {
   it("JSON 본문은 그대로 돌려준다", async () => {
     expect(await readJson(new Response('{"error":"없음"}'))).toEqual({ error: "없음" });

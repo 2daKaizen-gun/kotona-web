@@ -9,17 +9,11 @@ import type {
 } from "@/lib/backend";
 
 /**
- * 백엔드 없이 배포된 사이트가 보여 줄 고정 예시.
- *
- * <p>`satisfies` 로 고정해 두었기 때문에 백엔드 DTO 에서 필드 이름이 바뀌거나 사라지면
- * 여기서 컴파일이 깨진다. 예시가 조용히 낡는 것을 막으려는 것이다.
- * (생성된 타입은 모든 필드가 선택이라, 백엔드에 *추가된* 필드까지 잡아내지는 못한다)
- *
- * <p>아래 값들은 실제 분석 응답을 그대로 옮긴 것이다. 그럴듯하게 지어낸 숫자가 아니라
- * 진짜 출력이어야 예시로서 의미가 있다.
+ * 백엔드 없이 배포됐을 때 보여 줄 고정 예시. 실제 분석 응답을 옮긴 것이다.
+ * `satisfies` 로 묶어서 DTO 필드 이름이 바뀌면 컴파일이 깨진다.
  */
 
-/** 사외에 보낸 완곡한 보류 — 이 제품이 잡아내려는 전형적인 소프트 리젝션. */
+/** 사외에 보낸 완곡한 보류 */
 const SOFT_REJECTION = {
   totalScore: 73,
   category: "EMAIL",
@@ -86,7 +80,7 @@ const SOFT_REJECTION = {
   ],
 } satisfies NuanceResponse;
 
-/** 사외에 반말 — PROMPT_DESIGN 의 few-shot 예시가 15점을 예상하는 입력. */
+/** 사외에 반말 */
 const TOO_CASUAL = {
   totalScore: 20,
   category: "EMAIL",
@@ -147,7 +141,7 @@ const TOO_CASUAL = {
   ],
 } satisfies NuanceResponse;
 
-/** 쿠션어와 완곡 어미를 모두 갖춘 정중한 의뢰 — 감점이 걸리지 않는 쪽 예시. */
+/** 쿠션어와 완곡 어미가 있는 정중한 의뢰 */
 const POLITE_REQUEST = {
   totalScore: 92,
   category: "EMAIL",
@@ -203,10 +197,7 @@ const POLITE_REQUEST = {
   ],
 } satisfies NuanceResponse;
 
-/**
- * 입력에 따라 고를 예시. 무엇을 입력해도 같은 결과가 나오면 고장 난 것처럼 보이고,
- * 입력마다 다른 결과를 지어내면 거짓말이 된다. 그래서 몇 개의 진짜 응답 중에서 고른다.
- */
+/** 입력에 따라 위 예시 중 하나를 고른다. */
 const SAMPLES: { match: (text: string) => boolean; result: NuanceResponse }[] = [
   { match: (text) => /検討|難しい|考えておく/.test(text), result: SOFT_REJECTION },
   { match: (text) => /お手数|恐縮|でしょうか|いただけますか/.test(text), result: POLITE_REQUEST },
@@ -217,7 +208,7 @@ export function pickDemoAnalysis(text: string): NuanceResponse {
   return SAMPLES.find((sample) => sample.match(text))?.result ?? SOFT_REJECTION;
 }
 
-/** 백엔드 기본 사전(R__seed_default_phrases.sql)과 같은 목록. */
+/** 백엔드 기본 사전(R__seed_default_phrases.sql)과 같은 목록 */
 export const DEMO_PHRASES: BusinessPhrase[] = [
   {
     id: 1,
@@ -277,9 +268,8 @@ export const DEMO_PHRASES: BusinessPhrase[] = [
   },
 ];
 
-/** 이력 예시. 목록 요약과 상세가 어긋나지 않도록 한 곳에서 만든다. */
-// 타입을 따로 붙이지 않는다. satisfies 로 검사된 상수의 좁은 타입이 그대로 살아 있어야
-// riskAnalysis 같은 중첩 필드를 옵셔널 체이닝 없이 읽을 수 있다.
+/** 이력 예시. 목록 요약과 상세를 한 곳에서 만든다. */
+// satisfies 로 좁혀진 타입을 유지하려고 타입을 따로 붙이지 않는다.
 const HISTORY_SOURCE = [
   {
     id: 3,
@@ -311,8 +301,7 @@ export const DEMO_HISTORY: AnalysisHistory[] = HISTORY_SOURCE.map((row) => ({
   createdAt: row.createdAt,
 }));
 
-// 필드를 하나씩 적는다. 스프레드로 fullAnalysisJson 만 빼면 어느 필드가 요약에 실리는지
-// 코드만 봐서는 알 수 없고, 백엔드 요약 DTO 와 어긋나도 눈치채기 어렵다.
+// 백엔드 요약 DTO 와 같은 필드를 명시적으로 적는다.
 export const DEMO_HISTORY_SUMMARIES: AnalysisHistorySummary[] = DEMO_HISTORY.map(
   ({ id, userInput, totalScore, category, riskLevel, createdAt }) => ({
     id,
@@ -324,10 +313,7 @@ export const DEMO_HISTORY_SUMMARIES: AnalysisHistorySummary[] = DEMO_HISTORY.map
   }),
 );
 
-/**
- * 예시 이력을 페이지로 잘라 준다. 백엔드의 PageResponse 와 같은 모양이어야 한다.
- * `before` 가 오면 백엔드처럼 그 id 보다 작은 행만 남기고, page 는 무시한다.
- */
+/** 예시 이력 페이지. 백엔드 PageResponse 와 같은 모양이고, `before` 가 있으면 page 는 무시한다. */
 export function demoHistoryPage(page: number, size: number, before?: number): HistoryPage {
   const safeSize = Math.min(100, Math.max(1, size));
   const rows =
@@ -352,7 +338,7 @@ export function findDemoHistory(id: number): AnalysisHistory | undefined {
   return DEMO_HISTORY.find((row) => row.id === id);
 }
 
-/** 예시 숙어를 페이지로 자른다. 백엔드와 같은 정렬(정중도 내림차순, id 오름차순)을 따른다. */
+/** 예시 사전 페이지. 정렬은 백엔드와 같다(정중도 내림차순, id 오름차순). */
 export function demoPhrasePage(
   situation: string | undefined,
   page: number,
@@ -362,11 +348,11 @@ export function demoPhrasePage(
   const matching = situation
     ? DEMO_PHRASES.filter((phrase) => phrase.situation === situation)
     : DEMO_PHRASES;
-  // 정중도 없는 행은 0 으로 보아 맨 뒤로 — 백엔드의 nullsLast 와 같은 순서다(정중도는 1~5).
+  // 정중도 없는 행은 0 으로 보고 맨 뒤로 (정중도는 1~5)
   const sorted = [...matching].sort(
     (left, right) => (right.politenessLevel ?? 0) - (left.politenessLevel ?? 0) || (left.id ?? 0) - (right.id ?? 0),
   );
-  // 커서가 오면 백엔드처럼 그 행 다음부터. 정렬에서 커서 행 뒤에 오는 것만 남긴다.
+  // 커서 행 뒤에 오는 것만 남긴다
   const rows = cursor
     ? sorted.filter((phrase) => {
         const level = phrase.politenessLevel ?? 0;

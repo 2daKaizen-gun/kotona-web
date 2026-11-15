@@ -5,10 +5,7 @@ import AnalyzeForm from "@/components/AnalyzeForm";
 import { ANALYZE_TEXT_MAX } from "@/lib/limits";
 import { pickDemoAnalysis } from "@/lib/demo-data";
 
-/**
- * 분석 화면은 25초 넘게 걸리는 요청 하나를 중심으로 돈다.
- * 그 사이 사용자가 보는 것과, 실패했을 때 무엇을 읽게 되는지를 본다.
- */
+/** 분석 화면. 오래 걸리는 요청 중 화면과 실패 시 문구를 본다. */
 describe("AnalyzeForm", () => {
   const result = pickDemoAnalysis("検討させていただきます");
 
@@ -191,7 +188,7 @@ describe("AnalyzeForm", () => {
     });
 
     it("붙여넣은 글을 잘라내지 않는다", () => {
-      // maxLength 였다면 브라우저가 뒷부분을 말없이 버리고, 잘린 문장이 분석됐다
+      // maxLength 를 쓰면 브라우저가 뒷부분을 잘라 버린다
       render(<AnalyzeForm />);
       const long = "あ".repeat(ANALYZE_TEXT_MAX + 100);
 
