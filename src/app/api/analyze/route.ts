@@ -27,14 +27,14 @@ export async function POST(request: Request) {
 
   // 비어 있으면 사내로 보내고, 모르는 값은 400 으로 거절한다.
   const raw = payload.relationshipType;
-  const given = raw === undefined || raw === null || raw === "";
-  if (!given && !isRelationshipType(raw)) {
+  const missing = raw === undefined || raw === null || raw === "";
+  if (!missing && !isRelationshipType(raw)) {
     return NextResponse.json(
       { error: `relationshipType 은(는) 다음 중 하나여야 합니다: ${RELATIONSHIP_TYPES.join(", ")}` },
       { status: 400 },
     );
   }
-  const relationshipType = given ? "INTERNAL" : raw;
+  const relationshipType = missing ? "INTERNAL" : raw;
 
   try {
     // 사용자별 요청 제한을 위해 IP 를 넘긴다
