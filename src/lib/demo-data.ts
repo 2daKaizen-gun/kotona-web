@@ -197,10 +197,94 @@ const POLITE_REQUEST = {
   ],
 } satisfies NuanceResponse;
 
+/** 쿠션어 없는 직접 의뢰. 규칙이 에티켓과 간접성을 깎은 내역(scoreAdjustments)이 실린 예시 */
+const DIRECT_REQUEST = {
+  totalScore: 65,
+  category: "EMAIL",
+  metrics: {
+    politeness: 40,
+    indirectness: 15,
+    etiquette: 10
+  },
+  evaluation: {
+    summary: "경어 표현은 정확하고 정중하지만, 사외 거래처를 대상으로 할 때 쿠션어가 생략되어 있어 다소 단정적인 요청으로 전달될 위험이 있습니다.",
+    keigo_check: true,
+    cushion_phrase_check: false
+  },
+  feedback: {
+    issues: [
+      "쿠션어(お手数ですが 등)가 빠져 있어 어조가 약간 딱딱하게 느껴질 수 있습니다.",
+      "회신 희망 기한이 명시되어 있지 않아 상대방의 답변이 지연될 가능성이 있습니다."
+    ],
+    cultural_nuance: "일본의 사외 비즈니스 커뮤니케이션에서는 요청 사항을 전달할 때 'お手数をおかけいたしますが(번거로우시겠지만)', 'お忙しいところ恐縮ですが(바쁘신 와중에 죄송하지만)'와 같은 쿠션어를 문두에 사용하는 것이 바람직합니다. 쿠션어가 없으면 일방적인 지시나 배려 부족으로 비칠 수 있습니다."
+  },
+  suggestions: [
+    {
+      text: "お手数をおかけいたしますが、資料をご確認のうえ、ご返信いただけますと幸いです。",
+      level: "standard"
+    },
+    {
+      text: "大変お忙しいところ恐縮でございますが、資料をご確認のうえ、ご返信を賜りますようお願い申し上げます。",
+      level: "highest"
+    }
+  ],
+  sentiment: {
+    polarity: "Neutral",
+    confidence: 0.95,
+    honne: {
+      tatemae: "자료를 확인하신 후 답신을 부탁드립니다.",
+      trueIntent: "보낸 자료를 신속히 검토하고 이에 대한 답변이나 진행 여부를 알려주기를 원합니다.",
+      actionItem: "쿠션어와 회신 희망 기한을 보완하여 정중하게 보낼 것을 권장합니다."
+    }
+  },
+  riskAnalysis: {
+    riskLevel: "SAFE",
+    redFlags: [
+      "회신 기한 미지정으로 인한 처리 지연 가능성"
+    ],
+    copingStrategy: "쿠션어를 추가하여 완곡하게 요청하고, 필요하다면 회신 희망 일자를 함께 명시하여 상대방의 빠른 답변을 정중하게 유도하세요."
+  },
+  scoreAdjustments: [
+    {
+      metric: "etiquette",
+      before: "20",
+      after: "10",
+      reason: "쿠션어(お手数ですが・恐れ入りますが 등)가 쓰이지 않아 감점했습니다."
+    },
+    {
+      metric: "indirectness",
+      before: "20",
+      after: "15",
+      reason: "완곡 어미(〜でしょうか 등)가 쓰이지 않아 감점했습니다."
+    }
+  ],
+  smartReplies: [
+    {
+      scenario: "Clarification",
+      content: "資料をお送りいただきありがとうございます。内容につきましてご不明な点などがございましたら、お気軽にお申し付けください。",
+      description: "상대방이 자료 검토 중 문의 사항을 편하게 물어볼 수 있도록 유도하는 확인 답장입니다.",
+      nuanceLevel: "Standard"
+    },
+    {
+      scenario: "Soft Acceptance",
+      content: "ご連絡いただきありがとうございます。資料を確認のうえ、改めてご連絡申し上げます。",
+      description: "자료를 수신했음을 알리고 검토 후 조만간 답신하겠다는 의사를 전달하는 수락 답장입니다.",
+      nuanceLevel: "Soft"
+    },
+    {
+      scenario: "Counter-proposal",
+      content: "ご連絡いただきありがとうございます。資料を確認し、〇月〇日（木）までに改めてご回答差し上げてもよろしいでしょうか。",
+      description: "자료 검토 및 회신 일정을 구체적으로 제안하여 업무 기한을 분명히 하는 역제안 답장입니다.",
+      nuanceLevel: "Firm"
+    }
+  ]
+} satisfies NuanceResponse;
+
 /** 입력에 따라 위 예시 중 하나를 고른다. */
 const SAMPLES: { match: (text: string) => boolean; result: NuanceResponse }[] = [
   { match: (text) => /検討|難しい|考えておく/.test(text), result: SOFT_REJECTION },
   { match: (text) => /お手数|恐縮|でしょうか|いただけますか/.test(text), result: POLITE_REQUEST },
+  { match: (text) => /ください|お願い/.test(text), result: DIRECT_REQUEST },
   { match: (text) => text.trim().length <= 6, result: TOO_CASUAL },
 ];
 
