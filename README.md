@@ -1,6 +1,6 @@
 # KOTONA Web
 
-Frontend for [kotona-analyzer](https://github.com/2daKaizen-gun/kotona-analyzer), a Japanese business message analyzer that reads the 本音 (true intent) behind the 建前 (public face).
+Frontend for KOTONA, a Japanese business message analyzer that reads the 本音 (true intent) behind the 建前 (public face). The backend (kotona-analyzer) is a private repository.
 
 Next.js 16 (App Router) · TypeScript 6 · Tailwind CSS 4
 
@@ -11,7 +11,7 @@ Live: https://kotona-web.vercel.app/ — runs in [demo mode](#demo-mode) because
 Start the backend first.
 
 ```bash
-# 1) Backend (kotona-analyzer repo)
+# 1) Backend (kotona-analyzer, private repository)
 docker compose up -d --build          # app on :8081, MySQL on :3307
 
 # 2) Frontend
@@ -70,17 +70,15 @@ It is an explicit flag, not an automatic fallback. Falling back when the backend
 
 `KOTONA_DEMO` is read at build time for the prerendered pages. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
-Three of the fixtures were recorded before `scoreAdjustments` existed. The fourth, a request without a cushion phrase (try 「資料をご確認のうえ、ご返信をお願いいたします。」), shows the rules cutting etiquette and indirectness, with the reason for each.
+Three of the fixtures were recorded before `scoreAdjustments` existed. The fourth (try 「資料をご確認のうえ、ご返信をお願いいたします。」) shows the score adjustments on the result card.
 
 ## About the score
 
-The score is a model's judgement with a rule layer on top. **이 점수가 나온 과정** on the result card lists every rule adjustment (metric, before, after, reason).
-
-The risk grade is the more severe of the rules and the model. The rules raise no false alarm on the 27 safe sentences in the labelled set, but the model can, and its warning is what the card shows. On the 41 labelled sentences the shown grade matches the label 37 times; the 4 misses are all more severe, none less. Details: [kotona-analyzer `docs/EVALUATION.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/EVALUATION.md), [`docs/SCORE_PATH.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/SCORE_PATH.md).
+**이 점수가 나온 과정** on the result card lists each adjustment made to the score (metric, before, after, reason). How the score is produced and how it is evaluated are documented in the backend repository.
 
 ## The wait
 
-Analysis usually takes 20–30 s, 79 s at worst. Most of it is generating three replies and two alternatives in Japanese and Korean, plus model thinking at `thinking-level: high`. At `low`, two of every three replies were discarded for mixing in Korean or English (see the backend's `PROMPT_DESIGN.md`), so it stays at `high`.
+Analysis usually takes 20–30 s, 79 s at worst.
 
 `ProgressIndicator` shows the backend's stages on measured timings (the server doesn't stream progress). The analyze route sets `maxDuration = 120`, and `backend.ts` aborts at 110 s so our message arrives before the platform cuts the request.
 
@@ -133,9 +131,7 @@ openapi/            checked-in backend spec
 
 ## Related
 
-- [kotona-analyzer](https://github.com/2daKaizen-gun/kotona-analyzer): backend
-- Hosting options for the backend: [`docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md)
-- Hosting the backend: [kotona-analyzer#107](https://github.com/2daKaizen-gun/kotona-analyzer/issues/107)
+- Backend: kotona-analyzer (Spring Boot + Gemini), private repository
 
 ## License
 

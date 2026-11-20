@@ -13,7 +13,7 @@ export default function DemoBanner() {
           실제 AI 분석이 아니며, 입력한 문장은 어디에도 저장되지 않습니다.
         </span>
         <a
-          href="https://github.com/2daKaizen-gun/kotona-analyzer"
+          href="https://github.com/2daKaizen-gun/kotona-web/blob/main/DEPLOYMENT.md"
           target="_blank"
           rel="noreferrer"
           className="underline underline-offset-2 opacity-80 transition hover:opacity-100"
