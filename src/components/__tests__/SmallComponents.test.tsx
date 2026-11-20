@@ -29,7 +29,8 @@ describe("DemoBanner", () => {
     render(<DemoBanner />);
 
     const link = screen.getByRole("link", { name: "왜인가요?" });
-    expect(link).toHaveAttribute("href", expect.stringContaining("kotona-analyzer"));
+    // 백엔드 저장소는 비공개라 공개 저장소의 배포 문서로 연결한다
+    expect(link).toHaveAttribute("href", expect.stringContaining("kotona-web/blob/main/DEPLOYMENT.md"));
     // 새 탭으로 열 때 원래 창을 조작하지 못하게 한다
     expect(link).toHaveAttribute("rel", expect.stringContaining("noreferrer"));
   });

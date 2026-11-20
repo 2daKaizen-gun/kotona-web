@@ -32,16 +32,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {children}
         <footer className="mx-auto mt-auto w-full max-w-3xl px-6 pb-10">
           <div className="border-t border-black/10 pt-6 text-xs opacity-40 dark:border-white/15">
-            분석 엔진:{" "}
-            <a
-              href="https://github.com/2daKaizen-gun/kotona-analyzer"
-              target="_blank"
-              rel="noreferrer"
-              className="underline underline-offset-2"
-            >
-              kotona-analyzer
-            </a>{" "}
-            (Spring Boot + Gemini)
+            분석 엔진: Spring Boot + Gemini (비공개 저장소)
           </div>
         </footer>
       </body>
