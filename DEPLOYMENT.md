@@ -1,6 +1,6 @@
 # Deployment
 
-The frontend is deployed on Vercel. The backend is not hosted yet: it needs about 320 MB of memory, real MySQL 8, and requests of up to 100 s. Some free tiers can hold that; options are in [kotona-analyzer `docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md) ([kotona-analyzer#107](https://github.com/2daKaizen-gun/kotona-analyzer/issues/107)).
+The frontend is deployed on Vercel. The backend (a private repository) is not hosted yet: it needs about 320 MB of memory, real MySQL 8, and requests of up to 100 s.
 
 Until then the site runs in demo mode: recorded samples, a banner on every page, and writes refused.
 
