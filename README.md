@@ -70,7 +70,7 @@ It is an explicit flag, not an automatic fallback. Falling back when the backend
 
 `KOTONA_DEMO` is read at build time for the prerendered pages. See [DEPLOYMENT.md](DEPLOYMENT.md).
 
-The fixtures were recorded before `scoreAdjustments` existed, so the live demo doesn't show that section.
+Three of the fixtures were recorded before `scoreAdjustments` existed. The fourth, a request without a cushion phrase (try 「資料をご確認のうえ、ご返信をお願いいたします。」), shows the rules cutting etiquette and indirectness, with the reason for each.
 
 ## About the score
 
@@ -88,7 +88,7 @@ Analysis usually takes 20–30 s, 79 s at worst. Most of it is generating three 
 
 | What | Result | Command |
 |---|---|---|
-| Unit tests | 175 | `npm test` |
+| Unit tests | 176 | `npm test` |
 | Browser tests | 12 (Chromium) | `npm run test:e2e` (production build in demo mode on :3100) |
 | Coverage | 96% lines, 88% branches | `npm run test:coverage` (floors in `vitest.config.mts`) |
 | Type errors | 0 | `npm run typecheck` (`next typegen && tsc --noEmit`) |

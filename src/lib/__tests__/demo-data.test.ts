@@ -22,6 +22,13 @@ describe("분석 예시 고르기", () => {
     expect(pickDemoAnalysis("お手数ですが、ご確認いただけますでしょうか。").totalScore).toBe(92);
   });
 
+  it("쿠션어 없는 직접 의뢰는 규칙 조정 내역이 있는 예시를 고른다", () => {
+    const result = pickDemoAnalysis("資料をご確認のうえ、ご返信をお願いいたします。");
+
+    expect(result.totalScore).toBe(65);
+    expect(result.scoreAdjustments?.map((adjustment) => adjustment.metric)).toEqual(["etiquette", "indirectness"]);
+  });
+
   it("짧은 반말은 낮은 점수 예시를 고른다", () => {
     expect(pickDemoAnalysis("よろしく").totalScore).toBe(20);
   });
@@ -45,7 +52,7 @@ describe("분석 예시 고르기", () => {
 
   it("모든 예시가 화면이 그리는 항목을 갖추고 있다", () => {
     // 한 곳이라도 비면 결과 화면에 빈 칸이 생긴다
-    for (const text of ["検討", "よろしく", "お手数ですが"]) {
+    for (const text of ["検討", "よろしく", "お手数ですが", "ご返信をお願いいたします"]) {
       const result = pickDemoAnalysis(text);
 
       expect(result.metrics).toBeDefined();
