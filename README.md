@@ -135,7 +135,7 @@ openapi/            checked-in backend spec
 
 - [kotona-analyzer](https://github.com/2daKaizen-gun/kotona-analyzer): backend
 - Hosting options for the backend: [`docs/HOSTING.md`](https://github.com/2daKaizen-gun/kotona-analyzer/blob/main/docs/HOSTING.md)
-- Tracking issue: [kotona-analyzer#27](https://github.com/2daKaizen-gun/kotona-analyzer/issues/27)
+- Hosting the backend: [kotona-analyzer#107](https://github.com/2daKaizen-gun/kotona-analyzer/issues/107)
 
 ## License
 
