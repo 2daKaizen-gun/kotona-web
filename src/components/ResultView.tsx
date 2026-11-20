@@ -189,9 +189,8 @@ function ScoreAdjustments({
         ))}
       </ul>
       <p className="mt-3 text-xs opacity-50">
-        AI 가 매긴 점수를 사전 기반 규칙이 다시 확인한 결과입니다. 규칙이 보는 표현은 한정돼 있어
-        완전하지 않습니다. 위험도 등급은 AI 와 규칙 중 <strong className="font-medium">더 위험한 쪽</strong>
-        을 택하므로, 한쪽이 과하게 읽으면 그 경고가 그대로 표시됩니다.
+        자동 분석 결과이며 완전하지 않습니다. 위험도는 거절을 놓치지 않는 쪽으로 판단하므로
+        실제보다 <strong className="font-medium">엄격하게</strong> 표시될 수 있습니다.
       </p>
     </details>
   );

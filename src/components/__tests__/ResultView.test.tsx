@@ -156,14 +156,13 @@ describe("ResultView", () => {
       expect(screen.getByText(/완전하지 않습니다/)).toBeInTheDocument();
     });
 
-    // 등급은 AI 와 규칙 중 더 위험한 쪽이라는 설명이 있어야 한다
-    it("등급이 둘 중 더 위험한 쪽이라는 것도 밝힌다", async () => {
+    // 위험도가 실제보다 엄격하게 나올 수 있다는 것을 알려야 한다
+    it("위험도가 엄격한 쪽으로 기운다는 것을 밝힌다", async () => {
       render(<ResultView result={adjusted} />);
 
       await userEvent.click(screen.getByText(/이 점수가 나온 과정/));
 
-      expect(screen.getByText(/더 위험한 쪽/)).toBeInTheDocument();
-      expect(screen.getByText(/그 경고가 그대로 표시됩니다/)).toBeInTheDocument();
+      expect(screen.getByText(/거절을 놓치지 않는 쪽으로 판단/)).toBeInTheDocument();
     });
   });
 });
