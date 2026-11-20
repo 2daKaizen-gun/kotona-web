@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
  * 마지막 단계는 응답이 올 때까지 유지된다.
  */
 const STAGES = [
-  { at: 0, label: "문장 정규화 및 형태소 분석" },
+  { at: 0, label: "문장을 읽는 중" },
   { at: 2, label: "AI가 경어·간접표현을 평가하는 중" },
   { at: 10, label: "本音(속마음)과 리스크를 추출하는 중" },
   { at: 18, label: "상황별 추천 답장을 작성하는 중" },
