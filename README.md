@@ -87,7 +87,7 @@ Analysis usually takes 20–30 s, 79 s at worst.
 | What | Result | Command |
 |---|---|---|
 | Unit tests | 176 | `npm test` |
-| Browser tests | 12 (Chromium) | `npm run test:e2e` (production build in demo mode on :3100) |
+| Browser tests | 13 (Chromium) | `npm run test:e2e` (production build in demo mode on :3100) |
 | Coverage | 96% lines, 88% branches | `npm run test:coverage` (floors in `vitest.config.mts`) |
 | Type errors | 0 | `npm run typecheck` (`next typegen && tsc --noEmit`) |
 | Lint | 0 | `npm run lint` |
