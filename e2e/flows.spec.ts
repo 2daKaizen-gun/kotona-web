@@ -50,6 +50,30 @@ test.describe("분석", () => {
     await expect(page.getByText("92", { exact: true })).toBeVisible();
   });
 
+  test("규칙이 점수를 고친 내역을 펼쳐 볼 수 있다", async ({ page }) => {
+    await page.goto("/");
+    const input = page.getByLabel("분석할 일본어 문장");
+    const analyse = page.getByRole("button", { name: "분석하기" });
+
+    // 조정이 없는 결과에는 내역이 없다
+    await input.fill("お手数ですが、ご確認いただけますでしょうか。");
+    await analyse.click();
+    await expect(page.getByText("92", { exact: true })).toBeVisible();
+    await expect(page.getByText(/이 점수가 나온 과정/)).toHaveCount(0);
+
+    await input.fill("資料を送ってください。");
+    await analyse.click();
+    const summary = page.getByText("이 점수가 나온 과정 (2건 조정됨)");
+    await expect(summary).toBeVisible();
+
+    const reason = page.getByText("쿠션어(お手数ですが・恐れ入りますが 등)가 쓰이지 않아 감점했습니다.");
+    await expect(reason).toBeHidden();
+    await summary.click();
+    await expect(reason).toBeVisible();
+    await expect(page.getByText("20 → 10")).toBeVisible();
+    await expect(page.getByText("20 → 15")).toBeVisible();
+  });
+
   test("일본어가 아닌 입력은 거절된다", async ({ page }) => {
     // 백엔드 없이도 route handler 가 빈 입력을 막는지
     await page.goto("/");
